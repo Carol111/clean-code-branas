@@ -23,4 +23,10 @@ app.post("/signup", async (req: Request, res:  Response) => {
   });
 })
 
+app.get("/accounts/:accountId", async (req: Request, res:  Response) => {
+  const accountId = req.params.accountId;
+  const account = accounts.find((account: any) => account.accountId === accountId);
+  res.json(account);
+});
+
 app.listen(3000);
