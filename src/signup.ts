@@ -15,6 +15,14 @@ function isValidEmail (email: string) {
   return email.match(/^(.+)\@(.+)$/);
 }
 
+function isValidPassword (password: string) {
+  if (password.length < 8) return false;
+  if (!password.match(/\d+/)) return false;
+  if (!password.match(/[a-z]+/)) return false;
+  if (!password.match(/[A-Z]+/)) return false;
+  return true;
+}
+
 app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
   const input = req.body;
 
@@ -33,6 +41,12 @@ app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
   if (!validateCpf(input.document)) {
     return res.status(422).json({
       error: "Invalid document"
+    });
+  }
+
+  if (!isValidPassword(input.password)) {
+    return res.status(422).json({
+      error: "Invalid password"
     });
   }
 
