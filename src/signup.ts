@@ -1,5 +1,6 @@
 import express, { Request, Response} from "express";
 import crypto from "crypto";
+import { validateCpf } from "./validateCpf";
 
 const app = express();
 app.use(express.json());
@@ -26,6 +27,12 @@ app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
   if (!isValidEmail(input.email)) {
     return res.status(422).json({
       error: "Invalid email"
+    });
+  }
+
+  if (!validateCpf(input.document)) {
+    return res.status(422).json({
+      error: "Invalid document"
     });
   }
 
