@@ -15,6 +15,12 @@ app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
     });
   }
 
+  if (!input.email.match(/^(.+)\@(.+)$/)) {
+    return res.status(422).json({
+      error: "Invalid email"
+    });
+  }
+
   const accountId = crypto.randomUUID();
   const account = {
     accountId,
