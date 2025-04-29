@@ -38,7 +38,7 @@ test("Não deve criar uma conta com nome inválido", async () => {
   expect(outputSignup.error).toBe("Invalid name");
 });
 
-test.only("Não deve criar uma conta com email inválido", async () => {
+test("Não deve criar uma conta com email inválido", async () => {
   const inputSignup = {
     name: "John Doe",
     email: "john.doe",

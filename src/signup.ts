@@ -9,7 +9,7 @@ const accounts: any = [];
 app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
   const input = req.body;
 
-  if (input.name.split(" ").length < 2) {
+  if (!input.name.match(/[a-zA-Z] [a-zA-Z]+/)) {
     return res.status(422).json({
       error: "Invalid name"
     });
