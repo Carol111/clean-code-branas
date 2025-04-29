@@ -6,8 +6,15 @@ app.use(express.json());
 
 const accounts: any = [];
 
-app.post("/signup", async (req: Request, res:  Response) => {
+app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
   const input = req.body;
+
+  if (input.name.split(" ").length < 2) {
+    return res.status(422).json({
+      error: "Invalid name"
+    });
+  }
+
   const accountId = crypto.randomUUID();
   const account = {
     accountId,

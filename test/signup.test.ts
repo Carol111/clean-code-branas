@@ -1,5 +1,7 @@
 import axios from "axios";
 
+axios.defaults.validateStatus = () => true;
+
 test("Deve criar uma conta válida", async () => {
   const inputSignup = {
     name: "John Doe",
