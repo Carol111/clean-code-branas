@@ -10,6 +10,10 @@ function isValidName (name: string) {
   return name.match(/[a-zA-Z] [a-zA-Z]+/);
 }
 
+function isValidEmail (email: string) {
+  return email.match(/^(.+)\@(.+)$/);
+}
+
 app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
   const input = req.body;
 
@@ -19,7 +23,7 @@ app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
     });
   }
 
-  if (!input.email.match(/^(.+)\@(.+)$/)) {
+  if (!isValidEmail(input.email)) {
     return res.status(422).json({
       error: "Invalid email"
     });
