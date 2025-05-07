@@ -24,6 +24,10 @@ function isValidPassword (password: string) {
   return true;
 }
 
+function isValidUUID (uuid: string) {
+  return uuid.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+}
+
 app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
   const input = req.body;
 
@@ -70,8 +74,56 @@ app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
 app.get("/accounts/:accountId", async (req: Request, res:  Response) => {
   const accountId = req.params.accountId;
   const [accountData] = await connection.query("select * from ccca.account where account_id = $1", [accountId]);
+  const accountAssetsData = await connection.query("select * from ccca.account_asset where account_id = $1", [accountId]);
+
+  accountData.assets = [];
+  for (const accountAssetData of accountAssetsData) {
+      accountData.assets.push({ assetId: accountAssetData.asset_id, quantity: parseFloat(accountAssetData.quantity) });
+  }
 
   res.json(accountData);
 });
+
+app.post("/deposit", async (req: Request, res:  Response): Promise<any> => {
+  const input = req.body;
+
+  if (!isValidUUID(input.accountId)) {
+    return res.status(422).json({
+      error: "Invalid account"
+    });
+  }
+
+  const [accountData] = await connection.query("select * from ccca.account where account_id = $1", [input.accountId]);
+
+  if (!accountData) {
+    return res.status(422).json({
+      error: "Invalid account"
+    });
+  }
+
+  if (!["BTC", "USD"].includes(input.assetId)) {
+    return res.status(422).json({
+      error: "Invalid asset"
+    });
+  }
+
+  if (input.quantity <= 0) {
+    return res.status(422).json({
+      error: "Invalid quantity"
+    });
+  }
+
+  const [accountAssetsData] = await connection.query("select * from ccca.account_asset where account_id = $1 and asset_id = $2", [input.accountId, input.assetId]);
+
+  if (accountAssetsData) {
+    const newQuantity = parseFloat(accountAssetsData.quantity) + input.quantity;
+
+    await connection.query("update ccca.account_asset set quantity = $1 where account_id = $2 and asset_id = $3", [newQuantity, input.accountId, input.assetId]);
+  }
+
+  await connection.query("insert into ccca.account_asset (account_id, asset_id, quantity) values ($1, $2, $3)", [input.accountId, input.assetId, input.quantity]);
+
+  res.end();
+})
 
 app.listen(3000);
