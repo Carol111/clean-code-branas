@@ -119,6 +119,8 @@ app.post("/deposit", async (req: Request, res:  Response): Promise<any> => {
     const newQuantity = parseFloat(accountAssetsData.quantity) + input.quantity;
 
     await connection.query("update ccca.account_asset set quantity = $1 where account_id = $2 and asset_id = $3", [newQuantity, input.accountId, input.assetId]);
+
+    return res.end();
   }
 
   await connection.query("insert into ccca.account_asset (account_id, asset_id, quantity) values ($1, $2, $3)", [input.accountId, input.assetId, input.quantity]);
