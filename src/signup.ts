@@ -128,4 +128,54 @@ app.post("/deposit", async (req: Request, res:  Response): Promise<any> => {
   res.end();
 })
 
+app.post("/withdraw", async (req: Request, res:  Response): Promise<any> => {
+  const input = req.body;
+
+  if (!isValidUUID(input.accountId)) {
+    return res.status(422).json({
+      error: "Invalid account"
+    });
+  }
+
+  const [accountData] = await connection.query("select * from ccca.account where account_id = $1", [input.accountId]);
+
+  if (!accountData) {
+    return res.status(422).json({
+      error: "Invalid account"
+    });
+  }
+
+  if (!["BTC", "USD"].includes(input.assetId)) {
+    return res.status(422).json({
+      error: "Invalid asset"
+    });
+  }
+
+  if (input.quantity <= 0) {
+    return res.status(422).json({
+      error: "Invalid quantity"
+    });
+  }
+
+  const [accountAssetsData] = await connection.query("select * from ccca.account_asset where account_id = $1 and asset_id = $2", [input.accountId, input.assetId]);
+
+  if (!accountAssetsData) {
+    return res.status(422).json({
+      error: "No funds available for this asset"
+    });
+  }
+
+  if (parseFloat(accountAssetsData.quantity) < input.quantity) {
+    return res.status(422).json({
+      error: "Insufficient amount for withdrawal"
+    });
+  }
+
+  const newQuantity = parseFloat(accountAssetsData.quantity) - input.quantity;
+
+  await connection.query("update ccca.account_asset set quantity = $1 where account_id = $2 and asset_id = $3", [newQuantity, input.accountId, input.assetId]);
+
+  res.end();
+})
+
 app.listen(3000);
