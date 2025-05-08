@@ -24,8 +24,8 @@ test.each([
     quantity: deposit.quantity,
   };
 
-  const responseFirstDeposit = await axios.post("http://localhost:3000/deposit", inputDeposit);
-  expect(responseFirstDeposit.status).toBe(200);
+  const responseDeposit = await axios.post("http://localhost:3000/deposit", inputDeposit);
+  expect(responseDeposit.status).toBe(200);
 
   const responseGetAccount = await axios.get(`http://localhost:3000/accounts/${outputSignup.accountId}`);
   const outputGetAccount = responseGetAccount.data;
