@@ -3,9 +3,16 @@ import crypto from "crypto";
 import pgp from "pg-promise";
 import { validateCpf } from "./validateCpf";
 import { isValidPassword } from "./validatePassword";
+import cors from "cors";
+
+var corsOptions = {
+  origin: 'http://localhost:5173',
+  optionsSuccessStatus: 200,
+}
 
 const app = express();
 app.use(express.json());
+app.use(cors(corsOptions));
 
 const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
 
