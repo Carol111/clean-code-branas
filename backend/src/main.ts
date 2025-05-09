@@ -2,6 +2,7 @@ import express, { Request, Response} from "express";
 import crypto from "crypto";
 import pgp from "pg-promise";
 import { validateCpf } from "./validateCpf";
+import { isValidPassword } from "./validatePassword";
 
 const app = express();
 app.use(express.json());
@@ -14,14 +15,6 @@ function isValidName (name: string) {
 
 function isValidEmail (email: string) {
   return email.match(/^(.+)\@(.+)$/);
-}
-
-function isValidPassword (password: string) {
-  if (password.length < 8) return false;
-  if (!password.match(/\d+/)) return false;
-  if (!password.match(/[a-z]+/)) return false;
-  if (!password.match(/[A-Z]+/)) return false;
-  return true;
 }
 
 function isValidUUID (uuid: string) {
