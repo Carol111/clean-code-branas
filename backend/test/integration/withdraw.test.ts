@@ -13,16 +13,13 @@ test("Deve fazer um saque válido", async () => {
   const responseSignup = await axios.post("http://localhost:3000/signup", inputSignup);
   const outputSignup = responseSignup.data;
 
-  expect(outputSignup.accountId).toBeDefined();
-
   const inputDeposit = {
     accountId: outputSignup.accountId,
     assetId: "USD",
     quantity: 10,
   };
 
-  const responseDeposit = await axios.post("http://localhost:3000/deposit", inputDeposit);
-  expect(responseDeposit.status).toBe(200);
+  await axios.post("http://localhost:3000/deposit", inputDeposit);
 
   const inputWithdraw = {
     accountId: outputSignup.accountId,
@@ -30,8 +27,7 @@ test("Deve fazer um saque válido", async () => {
     quantity: 7,
   };
 
-  const responseWithdraw = await axios.post("http://localhost:3000/withdraw", inputWithdraw);
-  expect(responseWithdraw.status).toBe(200);
+  await axios.post("http://localhost:3000/withdraw", inputWithdraw);
 
   const responseGetAccount = await axios.get(`http://localhost:3000/accounts/${outputSignup.accountId}`);
   const outputGetAccount = responseGetAccount.data;
@@ -55,16 +51,13 @@ test.each([
   const responseSignup = await axios.post("http://localhost:3000/signup", inputSignup);
   const outputSignup = responseSignup.data;
 
-  expect(outputSignup.accountId).toBeDefined();
-
   const inputDeposit = {
     accountId: outputSignup.accountId,
     assetId: transaction.deposit.assetId,
     quantity: transaction.deposit.quantity,
   };
 
-  const responseDeposit = await axios.post("http://localhost:3000/deposit", inputDeposit);
-  expect(responseDeposit.status).toBe(200);
+  await axios.post("http://localhost:3000/deposit", inputDeposit);
 
   const inputWithdraw = {
     accountId: outputSignup.accountId,

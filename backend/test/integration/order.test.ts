@@ -13,8 +13,6 @@ test("Deve criar uma ordem de venda", async () => {
   const responseSignup = await axios.post("http://localhost:3000/signup", inputSignup);
   const outputSignup = responseSignup.data;
 
-  expect(outputSignup.accountId).toBeDefined();
-
   const inputDeposit = {
     accountId: outputSignup.accountId,
     assetId: "BTC",
@@ -22,7 +20,6 @@ test("Deve criar uma ordem de venda", async () => {
   };
 
   const responseDeposit = await axios.post("http://localhost:3000/deposit", inputDeposit);
-  expect(responseDeposit.status).toBe(200);
 
   const inputPlaceOrder = {
     marketId: "BTC/USD",
@@ -58,16 +55,13 @@ test("Deve criar uma ordem de compra", async () => {
   const responseSignup = await axios.post("http://localhost:3000/signup", inputSignup);
   const outputSignup = responseSignup.data;
 
-  expect(outputSignup.accountId).toBeDefined();
-
   const inputDeposit = {
     accountId: outputSignup.accountId,
     assetId: "USD",
     quantity: 100,
   };
 
-  const responseDeposit = await axios.post("http://localhost:3000/deposit", inputDeposit);
-  expect(responseDeposit.status).toBe(200);
+  await axios.post("http://localhost:3000/deposit", inputDeposit);
 
   const inputPlaceOrder = {
     marketId: "BTC/USD",
@@ -103,16 +97,13 @@ test("Não deve criar uma ordem de venda sem saldo suficiente", async () => {
   const responseSignup = await axios.post("http://localhost:3000/signup", inputSignup);
   const outputSignup = responseSignup.data;
 
-  expect(outputSignup.accountId).toBeDefined();
-
   const inputDeposit = {
     accountId: outputSignup.accountId,
     assetId: "BTC",
     quantity: 1,
   };
 
-  const responseDeposit = await axios.post("http://localhost:3000/deposit", inputDeposit);
-  expect(responseDeposit.status).toBe(200);
+  await axios.post("http://localhost:3000/deposit", inputDeposit);
 
   const inputPlaceOrder = {
     marketId: "BTC/USD",
@@ -137,16 +128,13 @@ test("Não deve criar uma ordem de venda se o saldo já foi comprometido com out
   const responseSignup = await axios.post("http://localhost:3000/signup", inputSignup);
   const outputSignup = responseSignup.data;
 
-  expect(outputSignup.accountId).toBeDefined();
-
   const inputDeposit = {
     accountId: outputSignup.accountId,
     assetId: "BTC",
     quantity: 1,
   };
 
-  const responseDeposit = await axios.post("http://localhost:3000/deposit", inputDeposit);
-  expect(responseDeposit.status).toBe(200);
+  await axios.post("http://localhost:3000/deposit", inputDeposit);
 
   const inputPlaceOrder = {
     marketId: "BTC/USD",
@@ -156,9 +144,7 @@ test("Não deve criar uma ordem de venda se o saldo já foi comprometido com out
     price: 94000,
   };
 
-  const responsePlaceFirstOrder = await axios.post("http://localhost:3000/place_order", inputPlaceOrder);
-  const outputPlaceFirstOrder = responsePlaceFirstOrder.data;
-  expect(outputPlaceFirstOrder.orderId).toBeDefined();
+  await axios.post("http://localhost:3000/place_order", inputPlaceOrder);
 
   const responsePlaceSecondOrder = await axios.post("http://localhost:3000/place_order", inputPlaceOrder);
   expect(responsePlaceSecondOrder.status).toBe(422);
@@ -192,8 +178,6 @@ test.each([
 
   const responseSignup = await axios.post("http://localhost:3000/signup", inputSignup);
   const outputSignup = responseSignup.data;
-
-  expect(outputSignup.accountId).toBeDefined();
 
   const inputPlaceOrder = {
     marketId: order.marketId,

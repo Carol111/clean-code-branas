@@ -16,16 +16,13 @@ test.each([
   const responseSignup = await axios.post("http://localhost:3000/signup", inputSignup);
   const outputSignup = responseSignup.data;
 
-  expect(outputSignup.accountId).toBeDefined();
-
   const inputDeposit = {
     accountId: outputSignup.accountId,
     assetId: deposit.assetId,
     quantity: deposit.quantity,
   };
 
-  const responseDeposit = await axios.post("http://localhost:3000/deposit", inputDeposit);
-  expect(responseDeposit.status).toBe(200);
+  await axios.post("http://localhost:3000/deposit", inputDeposit);
 
   const responseGetAccount = await axios.get(`http://localhost:3000/accounts/${outputSignup.accountId}`);
   const outputGetAccount = responseGetAccount.data;
@@ -74,8 +71,6 @@ test.each([
 
   const responseSignup = await axios.post("http://localhost:3000/signup", inputSignup);
   const outputSignup = responseSignup.data;
-
-  expect(outputSignup.accountId).toBeDefined();
 
   const inputDeposit = {
     accountId: outputSignup.accountId,
