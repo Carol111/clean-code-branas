@@ -2,7 +2,7 @@ function App() {
 
   return (
       <div>
-        <h1>Vite + React</h1>
+        <h1>Plataforma de Trading</h1>
       </div>
   )
 }

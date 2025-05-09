@@ -4,11 +4,7 @@
   "description": "Curso de Clean Code e Clean Architecture com Rodrigo Branas",
   "main": "index.js",
   "scripts": {
-    "docker:start": "docker compose up -d",
-    "docker:stop": "docker compose stop",
-    "docker:clean": "docker compose rm -fsv",
-    "coverage": "npx nyc --reporter=lcov --reporter=text ts-node src/main.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "coverage": "npx nyc --reporter=lcov --reporter=text ts-node src/main.ts"
   },
   "repository": {
     "type": "git",
