@@ -1,9 +1,7 @@
 import crypto from "crypto";
-import pgp from "pg-promise";
 import { validateCpf } from "./validateCpf";
 import { isValidPassword } from "./validatePassword";
-
-const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
+import { selectAccountAsset, selectAccountAssets, selectAccount, insertAccountAsset, insertAccount, updateAccountAsset, selectOrders, insertOrder, selectOrder } from "./resources";
 
 function isValidName (name: string) {
   return name.match(/[a-zA-Z] [a-zA-Z]+/);
@@ -33,7 +31,7 @@ export async function signup (input: any) {
     password: input.password,
   };
 
-  await connection.query("insert into ccca.account (account_id, name, email, document, password) values ($1, $2, $3, $4, $5)", [account.accountId, account.name, account.email, account.document, account.password]);
+  await insertAccount(account);
 
   return{
     accountId
@@ -43,11 +41,11 @@ export async function signup (input: any) {
 export async function getAccount (accountId: string) {
   if (!isValidUUID(accountId)) throw new Error("Invalid account");
 
-  const [accountData] = await connection.query("select * from ccca.account where account_id = $1", [accountId]);
+  const accountData = await selectAccount(accountId);
 
   if (!accountData) throw Object.assign(new Error('Account not found'), { statusCode: 404 });
 
-  const accountAssetsData = await connection.query("select * from ccca.account_asset where account_id = $1", [accountId]);
+  const accountAssetsData = await selectAccountAssets(accountId);
 
   accountData.assets = [];
   for (const accountAssetData of accountAssetsData) {
@@ -60,48 +58,48 @@ export async function getAccount (accountId: string) {
 export async function deposit (input: any) {
   if (!isValidUUID(input.accountId)) throw new Error("Invalid account");
 
-  const [accountData] = await connection.query("select * from ccca.account where account_id = $1", [input.accountId]);
+  const accountData = await selectAccount(input.accountId);
 
   if (!accountData) throw new Error("Invalid account");
   if (!["BTC", "USD"].includes(input.assetId)) throw new Error("Invalid asset");
   if (input.quantity <= 0) throw new Error("Invalid quantity");
 
-  const [accountAssetsData] = await connection.query("select * from ccca.account_asset where account_id = $1 and asset_id = $2", [input.accountId, input.assetId]);
+  const accountAssetData = await selectAccountAsset(input.accountId, input.assetId);
 
-  if (accountAssetsData) {
-    const newQuantity = parseFloat(accountAssetsData.quantity) + input.quantity;
+  if (accountAssetData) {
+    const newQuantity = parseFloat(accountAssetData.quantity) + input.quantity;
 
-    await connection.query("update ccca.account_asset set quantity = $1 where account_id = $2 and asset_id = $3", [newQuantity, input.accountId, input.assetId]);
+    await updateAccountAsset(newQuantity, input.accountId, input.assetId);
 
     return;
   }
 
-  await connection.query("insert into ccca.account_asset (account_id, asset_id, quantity) values ($1, $2, $3)", [input.accountId, input.assetId, input.quantity]);
+  await insertAccountAsset(input.quantity, input.accountId, input.assetId);
 };
 
 export async function withdraw (input: any) {
   if (!isValidUUID(input.accountId)) throw new Error("Invalid account");
 
-  const [accountData] = await connection.query("select * from ccca.account where account_id = $1", [input.accountId]);
+  const accountData = await selectAccount(input.accountId);
 
   if (!accountData) throw new Error("Invalid account");
   if (!["BTC", "USD"].includes(input.assetId)) throw new Error("Invalid asset");
   if (input.quantity <= 0) throw new Error("Invalid quantity");
 
-  const [accountAssetsData] = await connection.query("select * from ccca.account_asset where account_id = $1 and asset_id = $2", [input.accountId, input.assetId]);
+  const accountAssetData = await selectAccountAsset(input.accountId, input.assetId);
 
-  if (!accountAssetsData) throw new Error("No funds available for this asset");
-  if (parseFloat(accountAssetsData.quantity) < input.quantity) throw new Error("Insufficient amount for withdrawal");
+  if (!accountAssetData) throw new Error("No funds available for this asset");
+  if (parseFloat(accountAssetData.quantity) < input.quantity) throw new Error("Insufficient amount for withdrawal");
 
-  const newQuantity = parseFloat(accountAssetsData.quantity) - input.quantity;
+  const newQuantity = parseFloat(accountAssetData.quantity) - input.quantity;
 
-  await connection.query("update ccca.account_asset set quantity = $1 where account_id = $2 and asset_id = $3", [newQuantity, input.accountId, input.assetId]);
+  await updateAccountAsset(newQuantity, input.accountId, input.assetId);
 };
 
 export async function placeOrder (input: any) {
   if (!isValidUUID(input.accountId)) throw new Error("Invalid account");
 
-  const [accountData] = await connection.query("select * from ccca.account where account_id = $1", [input.accountId]);
+  const accountData = await selectAccount(input.accountId);
 
   if (!accountData) throw new Error("Invalid account");
   if (!["BTC/USD", "USD/BTC"].includes(input.marketId)) throw new Error("Invalid order");
@@ -112,20 +110,20 @@ export async function placeOrder (input: any) {
   const assetsId = input.marketId.split("/");
   const assetId = input.side === "sell" ? assetsId[0] : assetsId[1];
 
-  const [accountAssetsData] = await connection.query("select * from ccca.account_asset where account_id = $1 and asset_id = $2", [input.accountId, assetId]);
+  const accountAssetData = await selectAccountAsset(input.accountId, assetId);
 
-  if (!accountAssetsData) throw new Error("No funds available for this order");
+  if (!accountAssetData) throw new Error("No funds available for this order");
 
-  if (input.side === "sell" ? parseFloat(accountAssetsData.quantity) < input.quantity : parseFloat(accountAssetsData.quantity) < input.price) throw new Error("Insufficient amount for this order");
+  if (input.side === "sell" ? parseFloat(accountAssetData.quantity) < input.quantity : parseFloat(accountAssetData.quantity) < input.price) throw new Error("Insufficient amount for this order");
 
-  const ordersData = await connection.query("select * from ccca.order where account_id = $1 and market_id = $2 and side = $3", [input.accountId, input.marketId, input.side]);
+  const ordersData = await selectOrders(input.accountId, input.marketId, input.side);
 
   let totalAmout = 0;
   for (const orderData of ordersData) {
     totalAmout += input.side === "sell" ? parseFloat(orderData.quantity) : parseFloat(orderData.price);
   }
 
-  if (input.side === "sell" ? parseFloat(accountAssetsData.quantity) < input.quantity + totalAmout : parseFloat(accountAssetsData.quantity) < input.price + totalAmout) throw new Error("Insufficient amount for this order");
+  if (input.side === "sell" ? parseFloat(accountAssetData.quantity) < input.quantity + totalAmout : parseFloat(accountAssetData.quantity) < input.price + totalAmout) throw new Error("Insufficient amount for this order");
 
   const order = {
       orderId: crypto.randomUUID(),
@@ -138,7 +136,7 @@ export async function placeOrder (input: any) {
       timestamp: new Date()
   }
 
-  await connection.query("insert into ccca.order (order_id, market_id, account_id, side, quantity, price, status, timestamp) values ($1, $2, $3, $4, $5, $6, $7, $8)", [order.orderId, order.marketId, order.accountId, order.side, order.quantity, order.price, order.status, order.timestamp]);
+  await insertOrder(order);
 
   return {
       orderId: order.orderId
@@ -148,7 +146,7 @@ export async function placeOrder (input: any) {
 export async function getOrder (orderId: string) {
     if (!isValidUUID(orderId)) throw new Error("Invalid order");
 
-    const [orderData] = await connection.query("select * from ccca.order where order_id = $1", [orderId]);
+    const orderData = await selectOrder(orderId);
 
     if (!orderData) throw Object.assign(new Error('Order not found'), { statusCode: 404 });
 
