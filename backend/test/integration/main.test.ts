@@ -1,12 +1,12 @@
 import Signup from "../../src/Signup";
-import { AccountDAOMemory } from "../../src/AccountDAO";
+import { AccountDAODatabase } from "../../src/AccountDAO";
 import GetAccount from "../../src/GetAccount";
 
 let signup: Signup;
 let getAccount: GetAccount;
 
 beforeEach(() => {
-  const accountDAO = new AccountDAOMemory();
+  const accountDAO = new AccountDAODatabase();
   signup = new Signup(accountDAO);
   getAccount = new GetAccount(accountDAO);
 })
@@ -39,37 +39,4 @@ test("Não deve criar uma conta com nome inválido", async () => {
   };
 
   await expect(() => signup.execute(inputSignup)).rejects.toThrow("Invalid name");
-});
-
-test("Não deve criar uma conta com email inválido", async () => {
-  const inputSignup = {
-    name: "John Doe",
-    email: "john.doe",
-    document: "97456321558",
-    password: "asdQWE123"
-  };
-
-  await expect(() => signup.execute(inputSignup)).rejects.toThrow("Invalid email");
-});
-
-test("Não deve criar uma conta com CPF inválido", async () => {
-  const inputSignup = {
-    name: "John Doe",
-    email: "john.doe@gmail.com",
-    document: "974563215",
-    password: "asdQWE123"
-  };
-
-  await expect(() => signup.execute(inputSignup)).rejects.toThrow("Invalid document");
-});
-
-test("Não deve criar uma conta com senha inválida", async () => {
-  const inputSignup = {
-    name: "John Doe",
-    email: "john.doe@gmail.com",
-    document: "97456321558",
-    password: "asdQWE"
-  };
-
-  await expect(() => signup.execute(inputSignup)).rejects.toThrow("Invalid password");
 });

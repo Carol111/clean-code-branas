@@ -1,59 +1,9 @@
 import crypto from "crypto";
-import { validateCpf } from "./validateCpf";
-import { isValidPassword } from "./validatePassword";
-import { selectAccountAsset, selectAccountAssets, selectAccount, insertAccountAsset, insertAccount, updateAccountAsset, selectOrders, insertOrder, selectOrder } from "./resources";
-
-function isValidName (name: string) {
-  return name.match(/[a-zA-Z] [a-zA-Z]+/);
-}
-
-function isValidEmail (email: string) {
-  return email.match(/^(.+)\@(.+)$/);
-}
+import { selectAccountAsset, selectAccount, insertAccountAsset, updateAccountAsset, selectOrders, insertOrder, selectOrder } from "./resources";
 
 function isValidUUID (uuid: string) {
   return uuid.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
 }
-
-export async function signup (input: any) {
-
-  if (!isValidName(input.name)) throw new Error("Invalid name");
-  if (!isValidEmail(input.email)) throw new Error("Invalid email");
-  if (!validateCpf(input.document)) throw new Error("Invalid document");
-  if (!isValidPassword(input.password)) throw new Error("Invalid password");
-
-  const accountId = crypto.randomUUID();
-  const account = {
-    accountId,
-    name: input.name,
-    email: input.email,
-    document: input.document,
-    password: input.password,
-  };
-
-  await insertAccount(account);
-
-  return{
-    accountId
-  };
-};
-
-export async function getAccount (accountId: string) {
-  if (!isValidUUID(accountId)) throw new Error("Invalid account");
-
-  const accountData = await selectAccount(accountId);
-
-  if (!accountData) throw Object.assign(new Error('Account not found'), { statusCode: 404 });
-
-  const accountAssetsData = await selectAccountAssets(accountId);
-
-  accountData.assets = [];
-  for (const accountAssetData of accountAssetsData) {
-      accountData.assets.push({ assetId: accountAssetData.asset_id, quantity: parseFloat(accountAssetData.quantity) });
-  }
-
-  return accountData;
-};
 
 export async function deposit (input: any) {
   if (!isValidUUID(input.accountId)) throw new Error("Invalid account");

@@ -1,25 +1,11 @@
 
 import pgp from "pg-promise";
 
-
-export async function insertAccount (account: any) {
-  const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-  await connection.query("insert into ccca.account (account_id, name, email, document, password) values ($1, $2, $3, $4, $5)", [account.accountId, account.name, account.email, account.document, account.password]);
-  await connection.$pool.end();
-}
-
 export async function selectAccount (accountId: string) {
   const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
   const [accountData] = await connection.query("select * from ccca.account where account_id = $1", [accountId]);
   await connection.$pool.end();
   return accountData;
-}
-
-export async function selectAccountAssets (accountId: string) {
-  const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-  const accountAssetsData = await connection.query("select * from ccca.account_asset where account_id = $1", [accountId]);
-  await connection.$pool.end();
-  return accountAssetsData;
 }
 
 export async function selectAccountAsset (accountId: string, assetId: string) {

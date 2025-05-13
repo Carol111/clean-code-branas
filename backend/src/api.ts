@@ -1,6 +1,9 @@
 import express, { Request, Response} from "express";
 import cors from "cors";
-import { signup, getAccount, deposit, withdraw, placeOrder, getOrder } from "./application";
+import { deposit, withdraw, placeOrder, getOrder } from "./application";
+import Signup from "./Signup";
+import GetAccount from "./GetAccount";
+import { AccountDAODatabase } from "./AccountDAO";
 
 var corsOptions = {
   origin: 'http://localhost:5173',
@@ -11,10 +14,14 @@ const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
+const accountDAO = new AccountDAODatabase();
+const signup = new Signup(accountDAO);
+const getAccount = new GetAccount(accountDAO);
+
 app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
   try {
     const input = req.body;
-    const output = await signup(input);
+    const output = await signup.execute(input);
     res.json(output);
   } catch (e: any) {
     res.status(422).json({
@@ -26,7 +33,7 @@ app.post("/signup", async (req: Request, res:  Response): Promise<any> => {
 app.get("/accounts/:accountId", async (req: Request, res:  Response): Promise<any> => {
   try {
     const accountId = req.params.accountId;
-    const output = await getAccount(accountId);
+    const output = await getAccount.execute(accountId);
     res.json(output);
   } catch (e: any) {
     res.status(e.statusCode ?? 422).json({
