@@ -1,18 +1,37 @@
 import pgp from "pg-promise";
 
 export default interface OrderDAO {
-  selectOrders(accountId: string, marketId: string, side: string): Promise<any>;
+  selectOrders(
+    marketId: string,
+    side: string,
+    accountId?: string,
+    status?: string,
+  ): Promise<any>;
   selectOrder(orderId: string): Promise<any>;
   insertOrder(order: any): Promise<any>;
 }
 
 export class OrderDAODatabase implements OrderDAO {
-  async selectOrders(accountId: string, marketId: string, side: string) {
+  async selectOrders(
+    marketId: string,
+    side: string,
+    accountId?: string,
+    status?: string,
+  ) {
     const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-    const ordersData = await connection.query(
-      "select * from ccca.order where account_id = $1 and market_id = $2 and side = $3",
-      [accountId, marketId, side],
-    );
+
+    const query =
+      "select * from ccca.order where market_id = $1 and side = $2" +
+      (accountId ? " and account_id = $3" : "") +
+      (status ? " and status = $" : "") +
+      (accountId && status ? "4" : status ? "3" : "");
+
+    const params = [marketId, side]
+      .concat(accountId ? [accountId] : [])
+      .concat(status ? [status] : []);
+
+    const ordersData = await connection.query(query, params);
+
     await connection.$pool.end();
     return ordersData;
   }

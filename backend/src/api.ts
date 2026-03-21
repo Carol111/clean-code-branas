@@ -6,6 +6,7 @@ import Deposit from "./Deposit";
 import Withdraw from "./Withdraw";
 import PlaceOrder from "./PlaceOrder";
 import GetOrder from "./GetOrder";
+import GetDepth from "./GetDepth";
 import { AccountDAODatabase } from "./AccountDAO";
 import { OrderDAODatabase } from "./OrderDAO";
 
@@ -26,6 +27,7 @@ const deposit = new Deposit(accountDAO);
 const withdraw = new Withdraw(accountDAO);
 const placeOrder = new PlaceOrder(accountDAO, orderDAO);
 const getOrder = new GetOrder(orderDAO);
+const getDepth = new GetDepth(orderDAO);
 
 app.post("/signup", async (req: Request, res: Response): Promise<any> => {
   try {
@@ -113,6 +115,21 @@ app.get(
       res.json(output);
     } catch (e: any) {
       res.status(e.statusCode ?? 422).json({
+        error: e.message,
+      });
+    }
+  },
+);
+
+app.get(
+  "/markets/:marketId/depth",
+  async (req: Request, res: Response): Promise<any> => {
+    try {
+      const marketId = req.params.marketId;
+      const output = await getDepth.execute(marketId, 3);
+      res.json(output);
+    } catch (e: any) {
+      res.status(422).json({
         error: e.message,
       });
     }

@@ -45,9 +45,9 @@ export default class PlaceOrder {
       throw new Error("Insufficient amount for this order");
 
     const ordersData = await this.orderDAO.selectOrders(
-      accountId,
       marketId,
       side,
+      accountId,
     );
 
     let totalAmout = 0;
