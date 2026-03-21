@@ -1,5 +1,4 @@
 import Signup from "../../src/Signup";
-import GetAccount from "../../src/GetAccount";
 import Deposit from "../../src/Deposit";
 import PlaceOrder from "../../src/PlaceOrder";
 import GetOrder from "../../src/GetOrder";
@@ -7,7 +6,6 @@ import { AccountDAODatabase } from "../../src/AccountDAO";
 import { OrderDAODatabase } from "../../src/OrderDAO";
 
 let signup: Signup;
-let getAccount: GetAccount;
 let deposit: Deposit;
 let placeOrder: PlaceOrder;
 let getOrder: GetOrder;
@@ -16,7 +14,6 @@ beforeEach(() => {
   const accountDAO = new AccountDAODatabase();
   const orderDAO = new OrderDAODatabase();
   signup = new Signup(accountDAO);
-  getAccount = new GetAccount(accountDAO);
   deposit = new Deposit(accountDAO);
   placeOrder = new PlaceOrder(accountDAO, orderDAO);
   getOrder = new GetOrder(orderDAO);

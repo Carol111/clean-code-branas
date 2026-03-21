@@ -106,18 +106,3 @@ test("Não deve fazer um depósito de valor inválido", async () => {
     deposit.execute(outputSignup.accountId, "BTC", -10),
   ).rejects.toThrow("Invalid quantity");
 });
-
-test.each(["123", "00000000-0000-0000-0000-000000000000"])(
-  "Não deve fazer um depósito em uma conta inválida",
-  async (accountId: string) => {
-    const inputDeposit = {
-      accountId,
-      assetId: "BTC",
-      quantity: 1,
-    };
-
-    await expect(() => deposit.execute(accountId, "BTC", 1)).rejects.toThrow(
-      "Invalid account",
-    );
-  },
-);

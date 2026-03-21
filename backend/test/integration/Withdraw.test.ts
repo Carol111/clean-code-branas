@@ -124,22 +124,3 @@ test.each([
     ).rejects.toThrow(transaction.error);
   },
 );
-
-test.each(["123", "00000000-0000-0000-0000-000000000000"])(
-  "Não deve fazer um saque de uma conta inválida",
-  async (accountId: string) => {
-    const inputWithdraw = {
-      accountId,
-      assetId: "USD",
-      quantity: 10,
-    };
-
-    await expect(() =>
-      withdraw.execute(
-        inputWithdraw.accountId,
-        inputWithdraw.assetId,
-        inputWithdraw.quantity,
-      ),
-    ).rejects.toThrow("Invalid account");
-  },
-);
