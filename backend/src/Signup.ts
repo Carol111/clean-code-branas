@@ -3,19 +3,17 @@ import { validateCpf } from "./validateCpf";
 import { isValidPassword } from "./validatePassword";
 
 export default class Signup {
-  constructor (readonly accountDAO: AccountDAO) {
+  constructor(readonly accountDAO: AccountDAO) {}
 
-  }
-
-  isValidName (name: string) {
+  isValidName(name: string) {
     return name.match(/[a-zA-Z] [a-zA-Z]+/);
   }
 
-  isValidEmail (email: string) {
+  isValidEmail(email: string) {
     return email.match(/^(.+)\@(.+)$/);
   }
 
-  async execute (input: any): Promise<any> {
+  async execute(input: any): Promise<any> {
     if (!this.isValidName(input.name)) throw new Error("Invalid name");
     if (!this.isValidEmail(input.email)) throw new Error("Invalid email");
     if (!validateCpf(input.document)) throw new Error("Invalid document");
@@ -32,8 +30,8 @@ export default class Signup {
 
     await this.accountDAO.insertAccount(account);
 
-    return{
-      accountId
+    return {
+      accountId,
     };
   }
 }
