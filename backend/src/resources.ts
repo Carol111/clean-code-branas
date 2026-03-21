@@ -20,19 +20,6 @@ export async function selectAccountAsset(accountId: string, assetId: string) {
   return accountAssetData;
 }
 
-export async function updateAccountAsset(
-  quantity: number,
-  accountId: string,
-  assetId: string,
-) {
-  const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-  await connection.query(
-    "update ccca.account_asset set quantity = $1 where account_id = $2 and asset_id = $3",
-    [quantity, accountId, assetId],
-  );
-  await connection.$pool.end();
-}
-
 export async function selectOrders(
   accountId: string,
   marketId: string,

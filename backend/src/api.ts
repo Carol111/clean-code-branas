@@ -1,9 +1,10 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
-import { withdraw, placeOrder, getOrder } from "./application";
+import { placeOrder, getOrder } from "./application";
 import Signup from "./Signup";
 import GetAccount from "./GetAccount";
 import Deposit from "./Deposit";
+import Withdraw from "./Withdraw";
 import { AccountDAODatabase } from "./AccountDAO";
 
 var corsOptions = {
@@ -19,6 +20,7 @@ const accountDAO = new AccountDAODatabase();
 const signup = new Signup(accountDAO);
 const getAccount = new GetAccount(accountDAO);
 const deposit = new Deposit(accountDAO);
+const withdraw = new Withdraw(accountDAO);
 
 app.post("/signup", async (req: Request, res: Response): Promise<any> => {
   try {
@@ -66,8 +68,12 @@ app.post("/deposit", async (req: Request, res: Response): Promise<any> => {
 app.post("/withdraw", async (req: Request, res: Response): Promise<any> => {
   try {
     const input = req.body;
-    await withdraw(input);
-    res.end();
+    const output = await deposit.execute(
+      input.accountId,
+      input.assetId,
+      input.quantity,
+    );
+    res.json(output);
   } catch (e: any) {
     res.status(422).json({
       error: e.message,

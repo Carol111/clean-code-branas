@@ -2,7 +2,6 @@ import crypto from "crypto";
 import {
   selectAccountAsset,
   selectAccount,
-  updateAccountAsset,
   selectOrders,
   insertOrder,
   selectOrder,
@@ -12,29 +11,6 @@ function isValidUUID(uuid: string) {
   return uuid.match(
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
   );
-}
-
-export async function withdraw(input: any) {
-  if (!isValidUUID(input.accountId)) throw new Error("Invalid account");
-
-  const accountData = await selectAccount(input.accountId);
-
-  if (!accountData) throw new Error("Invalid account");
-  if (!["BTC", "USD"].includes(input.assetId)) throw new Error("Invalid asset");
-  if (input.quantity <= 0) throw new Error("Invalid quantity");
-
-  const accountAssetData = await selectAccountAsset(
-    input.accountId,
-    input.assetId,
-  );
-
-  if (!accountAssetData) throw new Error("No funds available for this asset");
-  if (parseFloat(accountAssetData.quantity) < input.quantity)
-    throw new Error("Insufficient amount for withdrawal");
-
-  const newQuantity = parseFloat(accountAssetData.quantity) - input.quantity;
-
-  await updateAccountAsset(newQuantity, input.accountId, input.assetId);
 }
 
 export async function placeOrder(input: any) {
