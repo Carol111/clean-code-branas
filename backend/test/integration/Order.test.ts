@@ -4,273 +4,175 @@ import PlaceOrder from "../../src/PlaceOrder";
 import GetOrder from "../../src/GetOrder";
 import { AccountDAODatabase } from "../../src/AccountDAO";
 import { OrderDAODatabase } from "../../src/OrderDAO";
+import orderEventEmitter from "../../src/OrderEventEmitter";
 
-let signup: Signup;
-let deposit: Deposit;
-let placeOrder: PlaceOrder;
-let getOrder: GetOrder;
+describe("Order", () => {
+  let signup: Signup;
+  let deposit: Deposit;
+  let placeOrder: PlaceOrder;
+  let getOrder: GetOrder;
+  let accountId: string;
 
-beforeEach(() => {
-  const accountDAO = new AccountDAODatabase();
-  const orderDAO = new OrderDAODatabase();
-  signup = new Signup(accountDAO);
-  deposit = new Deposit(accountDAO);
-  placeOrder = new PlaceOrder(accountDAO, orderDAO);
-  getOrder = new GetOrder(orderDAO);
-});
+  beforeEach(async () => {
+    const accountDAO = new AccountDAODatabase();
+    const orderDAO = new OrderDAODatabase();
+    signup = new Signup(accountDAO);
+    deposit = new Deposit(accountDAO);
+    placeOrder = new PlaceOrder(accountDAO, orderDAO);
+    getOrder = new GetOrder(orderDAO);
 
-test("Deve criar uma ordem de venda", async () => {
-  const inputSignup = {
-    name: "John Doe",
-    email: "john.doe@gmail.com",
-    document: "97456321558",
-    password: "asdQWE123",
-  };
-
-  const outputSignup = await signup.execute(inputSignup);
-
-  const inputDeposit = {
-    accountId: outputSignup.accountId,
-    assetId: "BTC",
-    quantity: 1,
-  };
-
-  await deposit.execute(
-    inputDeposit.accountId,
-    inputDeposit.assetId,
-    inputDeposit.quantity,
-  );
-
-  const inputPlaceOrder = {
-    marketId: "BTC/USD",
-    accountId: outputSignup.accountId,
-    side: "sell",
-    quantity: 1,
-    price: 94000,
-  };
-
-  const outputPlaceOrder = await placeOrder.execute(
-    inputPlaceOrder.accountId,
-    inputPlaceOrder.marketId,
-    inputPlaceOrder.side,
-    inputPlaceOrder.price,
-    inputPlaceOrder.quantity,
-  );
-
-  expect(outputPlaceOrder.orderId).toBeDefined();
-
-  const outputGetOrder = await getOrder.execute(outputPlaceOrder.orderId);
-
-  expect(outputGetOrder.marketId).toBe(inputPlaceOrder.marketId);
-  expect(outputGetOrder.side).toBe(inputPlaceOrder.side);
-  expect(outputGetOrder.quantity).toBe(inputPlaceOrder.quantity);
-  expect(outputGetOrder.price).toBe(inputPlaceOrder.price);
-  expect(outputGetOrder.status).toBe("open");
-  expect(outputGetOrder.timestamp).toBeDefined();
-});
-
-test("Deve criar uma ordem de compra", async () => {
-  const inputSignup = {
-    name: "John Doe",
-    email: "john.doe@gmail.com",
-    document: "97456321558",
-    password: "asdQWE123",
-  };
-
-  const outputSignup = await signup.execute(inputSignup);
-
-  const inputDeposit = {
-    accountId: outputSignup.accountId,
-    assetId: "USD",
-    quantity: 100,
-  };
-
-  await deposit.execute(
-    inputDeposit.accountId,
-    inputDeposit.assetId,
-    inputDeposit.quantity,
-  );
-
-  const inputPlaceOrder = {
-    marketId: "BTC/USD",
-    accountId: outputSignup.accountId,
-    side: "buy",
-    quantity: 0.001,
-    price: 94,
-  };
-
-  const outputPlaceOrder = await placeOrder.execute(
-    inputPlaceOrder.accountId,
-    inputPlaceOrder.marketId,
-    inputPlaceOrder.side,
-    inputPlaceOrder.price,
-    inputPlaceOrder.quantity,
-  );
-  expect(outputPlaceOrder.orderId).toBeDefined();
-
-  const outputGetOrder = await getOrder.execute(outputPlaceOrder.orderId);
-
-  expect(outputGetOrder.marketId).toBe(inputPlaceOrder.marketId);
-  expect(outputGetOrder.side).toBe(inputPlaceOrder.side);
-  expect(outputGetOrder.quantity).toBe(inputPlaceOrder.quantity);
-  expect(outputGetOrder.price).toBe(inputPlaceOrder.price);
-  expect(outputGetOrder.status).toBe("open");
-  expect(outputGetOrder.timestamp).toBeDefined();
-});
-
-test("Não deve criar uma ordem de venda sem saldo suficiente", async () => {
-  const inputSignup = {
-    name: "John Doe",
-    email: "john.doe@gmail.com",
-    document: "97456321558",
-    password: "asdQWE123",
-  };
-
-  const outputSignup = await signup.execute(inputSignup);
-
-  const inputDeposit = {
-    accountId: outputSignup.accountId,
-    assetId: "BTC",
-    quantity: 1,
-  };
-
-  await deposit.execute(
-    inputDeposit.accountId,
-    inputDeposit.assetId,
-    inputDeposit.quantity,
-  );
-
-  const inputPlaceOrder = {
-    marketId: "BTC/USD",
-    accountId: outputSignup.accountId,
-    side: "sell",
-    quantity: 2,
-    price: 94000,
-  };
-
-  await expect(() =>
-    placeOrder.execute(
-      inputPlaceOrder.accountId,
-      inputPlaceOrder.marketId,
-      inputPlaceOrder.side,
-      inputPlaceOrder.price,
-      inputPlaceOrder.quantity,
-    ),
-  ).rejects.toThrow("Insufficient amount for this order");
-});
-
-test("Não deve criar uma ordem de venda se o saldo já foi comprometido com outra ordem", async () => {
-  const inputSignup = {
-    name: "John Doe",
-    email: "john.doe@gmail.com",
-    document: "97456321558",
-    password: "asdQWE123",
-  };
-
-  const outputSignup = await signup.execute(inputSignup);
-
-  const inputDeposit = {
-    accountId: outputSignup.accountId,
-    assetId: "BTC",
-    quantity: 1,
-  };
-
-  await deposit.execute(
-    inputDeposit.accountId,
-    inputDeposit.assetId,
-    inputDeposit.quantity,
-  );
-
-  const inputPlaceOrder = {
-    marketId: "BTC/USD",
-    accountId: outputSignup.accountId,
-    side: "sell",
-    quantity: 1,
-    price: 94000,
-  };
-
-  await placeOrder.execute(
-    inputPlaceOrder.accountId,
-    inputPlaceOrder.marketId,
-    inputPlaceOrder.side,
-    inputPlaceOrder.price,
-    inputPlaceOrder.quantity,
-  );
-
-  await expect(() =>
-    placeOrder.execute(
-      inputPlaceOrder.accountId,
-      inputPlaceOrder.marketId,
-      inputPlaceOrder.side,
-      inputPlaceOrder.price,
-      inputPlaceOrder.quantity,
-    ),
-  ).rejects.toThrow("Insufficient amount for this order");
-});
-
-test.each([
-  {
-    marketId: "USD/USD",
-    side: "sell",
-    quantity: 1,
-    price: 1,
-    error: "Invalid order",
-  },
-  {
-    marketId: "BTC/USD",
-    side: "negociate",
-    quantity: 1,
-    price: 1,
-    error: "Invalid order",
-  },
-  {
-    marketId: "BTC/USD",
-    side: "sell",
-    quantity: -1,
-    price: 1,
-    error: "Invalid quantity",
-  },
-  {
-    marketId: "BTC/USD",
-    side: "sell",
-    quantity: 1,
-    price: -1,
-    error: "Invalid price",
-  },
-])(
-  "Não deve criar ordem com dados inválidos",
-  async (order: {
-    marketId: string;
-    side: string;
-    quantity: number;
-    price: number;
-    error: string;
-  }) => {
-    const inputSignup = {
+    const outputSignup = await signup.execute({
       name: "John Doe",
       email: "john.doe@gmail.com",
       document: "97456321558",
       password: "asdQWE123",
-    };
+    });
 
-    const outputSignup = await signup.execute(inputSignup);
+    accountId = outputSignup.accountId;
 
-    const inputPlaceOrder = {
-      marketId: order.marketId,
-      accountId: outputSignup.accountId,
-      side: order.side,
-      quantity: order.quantity,
-      price: order.price,
-    };
+    await deposit.execute(accountId, "BTC", 1);
+    await deposit.execute(accountId, "USD", 100);
+  });
+
+  afterEach(() => {
+    orderEventEmitter.removeAllListeners();
+  });
+
+  test("Should create a sell order", async () => {
+    const outputPlaceOrder = await placeOrder.execute(
+      accountId,
+      "BTC/USD",
+      "sell",
+      94000,
+      1,
+    );
+
+    expect(outputPlaceOrder.orderId).toBeDefined();
+
+    const outputGetOrder = await getOrder.execute(outputPlaceOrder.orderId);
+
+    expect(outputGetOrder.marketId).toBe("BTC/USD");
+    expect(outputGetOrder.side).toBe("sell");
+    expect(outputGetOrder.quantity).toBe(1);
+    expect(outputGetOrder.price).toBe(94000);
+    expect(outputGetOrder.status).toBe("open");
+    expect(outputGetOrder.timestamp).toBeDefined();
+  });
+
+  test("Should create a buy order", async () => {
+    const outputPlaceOrder = await placeOrder.execute(
+      accountId,
+      "BTC/USD",
+      "buy",
+      94,
+      0.001,
+    );
+    expect(outputPlaceOrder.orderId).toBeDefined();
+
+    const outputGetOrder = await getOrder.execute(outputPlaceOrder.orderId);
+
+    expect(outputGetOrder.marketId).toBe("BTC/USD");
+    expect(outputGetOrder.side).toBe("buy");
+    expect(outputGetOrder.quantity).toBe(0.001);
+    expect(outputGetOrder.price).toBe(94);
+    expect(outputGetOrder.status).toBe("open");
+    expect(outputGetOrder.timestamp).toBeDefined();
+  });
+
+  test("Should not create sell order when balance is insufficient", async () => {
+    await expect(() =>
+      placeOrder.execute(accountId, "BTC/USD", "sell", 94000, 2),
+    ).rejects.toThrow("Insufficient amount for this order");
+  });
+
+  test("Should not create sell order when balance is already reserved", async () => {
+    await placeOrder.execute(accountId, "BTC/USD", "sell", 94000, 1);
 
     await expect(() =>
-      placeOrder.execute(
-        inputPlaceOrder.accountId,
-        inputPlaceOrder.marketId,
-        inputPlaceOrder.side,
-        inputPlaceOrder.price,
-        inputPlaceOrder.quantity,
-      ),
-    ).rejects.toThrow(order.error);
-  },
-);
+      placeOrder.execute(accountId, "BTC/USD", "sell", 94000, 1),
+    ).rejects.toThrow("Insufficient amount for this order");
+  });
+
+  test.each([
+    {
+      marketId: "USD/USD",
+      side: "sell",
+      quantity: 1,
+      price: 1,
+      error: "Invalid order",
+    },
+    {
+      marketId: "BTC/USD",
+      side: "negociate",
+      quantity: 1,
+      price: 1,
+      error: "Invalid order",
+    },
+    {
+      marketId: "BTC/USD",
+      side: "sell",
+      quantity: -1,
+      price: 1,
+      error: "Invalid quantity",
+    },
+    {
+      marketId: "BTC/USD",
+      side: "sell",
+      quantity: 1,
+      price: -1,
+      error: "Invalid price",
+    },
+  ])(
+    "Should not create order with invalid data",
+    async (order: {
+      marketId: string;
+      side: string;
+      quantity: number;
+      price: number;
+      error: string;
+    }) => {
+      await expect(() =>
+        placeOrder.execute(
+          accountId,
+          order.marketId,
+          order.side,
+          order.price,
+          order.quantity,
+        ),
+      ).rejects.toThrow(order.error);
+    },
+  );
+
+  test("Should emit orderCreated event after order is placed", async () => {
+    let eventPayload: any = null;
+    orderEventEmitter.on("orderCreated", (order) => {
+      eventPayload = order;
+    });
+
+    await placeOrder.execute(accountId, "BTC/USD", "sell", 94000, 1);
+
+    expect(eventPayload).not.toBeNull();
+    expect(eventPayload).toEqual(
+      expect.objectContaining({
+        marketId: "BTC/USD",
+        side: "sell",
+        quantity: 1,
+        price: 94000,
+        status: "open",
+      }),
+    );
+  });
+
+  test("Should not emit event if order creation fails", async () => {
+    let eventPayload: any = null;
+    orderEventEmitter.on("orderCreated", (order) => {
+      eventPayload = order;
+    });
+
+    try {
+      await placeOrder.execute(accountId, "BTC/USD", "sell", 94000, 2);
+    } catch (error) {}
+
+    expect(eventPayload).toBeNull();
+  });
+});

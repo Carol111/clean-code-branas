@@ -1,5 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import Signup from "./Signup";
 import GetAccount from "./GetAccount";
 import Deposit from "./Deposit";
@@ -9,6 +11,7 @@ import GetOrder from "./GetOrder";
 import GetDepth from "./GetDepth";
 import { AccountDAODatabase } from "./AccountDAO";
 import { OrderDAODatabase } from "./OrderDAO";
+import { WebSocketHandlers } from "./WebSocketHandlers";
 
 var corsOptions = {
   origin: "http://localhost:5173",
@@ -121,19 +124,11 @@ app.get(
   },
 );
 
-app.get(
-  "/markets/:marketId/depth",
-  async (req: Request, res: Response): Promise<any> => {
-    try {
-      const marketId = req.params.marketId;
-      const output = await getDepth.execute(marketId, 3);
-      res.json(output);
-    } catch (e: any) {
-      res.status(422).json({
-        error: e.message,
-      });
-    }
-  },
-);
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: corsOptions,
+});
 
-app.listen(3000);
+new WebSocketHandlers(io, getDepth);
+
+httpServer.listen(3000, () => {});

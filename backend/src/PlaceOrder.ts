@@ -2,6 +2,7 @@ import crypto from "crypto";
 import AccountDAO from "./AccountDAO";
 import OrderDAO from "./OrderDAO";
 import { isValidUUID } from "./validateUUID";
+import orderEventEmitter from "./OrderEventEmitter";
 
 export default class PlaceOrder {
   constructor(
@@ -77,6 +78,17 @@ export default class PlaceOrder {
     };
 
     await this.orderDAO.insertOrder(order);
+
+    orderEventEmitter.emitOrderCreated({
+      orderId: order.orderId,
+      accountId: order.accountId,
+      marketId: order.marketId,
+      side: order.side,
+      quantity: order.quantity,
+      price: order.price,
+      status: order.status,
+      timestamp: order.timestamp,
+    });
 
     return {
       orderId: order.orderId,

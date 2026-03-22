@@ -3,23 +3,18 @@ import Deposit from "../../src/Deposit";
 import { AccountDAODatabase } from "../../src/AccountDAO";
 import GetAccount from "../../src/GetAccount";
 
-let signup: Signup;
-let getAccount: GetAccount;
-let deposit: Deposit;
+describe("Deposit", () => {
+  let signup: Signup;
+  let getAccount: GetAccount;
+  let deposit: Deposit;
+  let accountId: string;
 
-beforeEach(() => {
-  const accountDAO = new AccountDAODatabase();
-  signup = new Signup(accountDAO);
-  getAccount = new GetAccount(accountDAO);
-  deposit = new Deposit(accountDAO);
-});
+  beforeEach(async () => {
+    const accountDAO = new AccountDAODatabase();
+    signup = new Signup(accountDAO);
+    getAccount = new GetAccount(accountDAO);
+    deposit = new Deposit(accountDAO);
 
-test.each([
-  { assetId: "USD", quantity: 10 },
-  { assetId: "BTC", quantity: 0.000123 },
-])(
-  "Deve fazer um depósito válido",
-  async (depositData: { assetId: string; quantity: number }) => {
     const inputSignup = {
       name: "John Doe",
       email: "john.doe@gmail.com",
@@ -28,81 +23,47 @@ test.each([
     };
 
     const outputSignup = await signup.execute(inputSignup);
+    accountId = outputSignup.accountId;
+  });
 
-    await deposit.execute(
-      outputSignup.accountId,
-      depositData.assetId,
-      depositData.quantity,
+  test.each([
+    { assetId: "USD", quantity: 10 },
+    { assetId: "BTC", quantity: 0.000123 },
+  ])(
+    "Should make a valid deposit",
+    async (depositData: { assetId: string; quantity: number }) => {
+      await deposit.execute(
+        accountId,
+        depositData.assetId,
+        depositData.quantity,
+      );
+
+      const outputGetAccount = await getAccount.execute(accountId);
+
+      expect(outputGetAccount.assets).toHaveLength(1);
+      expect(outputGetAccount.assets[0].assetId).toBe(depositData.assetId);
+      expect(outputGetAccount.assets[0].quantity).toBe(depositData.quantity);
+    },
+  );
+
+  test("Should make a valid deposit and increment the current balance", async () => {
+    await deposit.execute(accountId, "BTC", 0.123);
+    await deposit.execute(accountId, "BTC", 0.123);
+
+    const outputGetAccount = await getAccount.execute(accountId);
+
+    expect(outputGetAccount.assets[0].quantity).toBe(0.123 + 0.123);
+  });
+
+  test("Should not make a deposit with an invalid asset", async () => {
+    await expect(() => deposit.execute(accountId, "xxx", 10)).rejects.toThrow(
+      "Invalid asset",
     );
+  });
 
-    const outputGetAccount = await getAccount.execute(outputSignup.accountId);
-
-    expect(outputGetAccount.assets).toHaveLength(1);
-    expect(outputGetAccount.assets[0].assetId).toBe(depositData.assetId);
-    expect(outputGetAccount.assets[0].quantity).toBe(depositData.quantity);
-  },
-);
-
-test("Deve fazer um depósito válido e incrementar saldo atual", async () => {
-  const inputSignup = {
-    name: "John Doe",
-    email: "john.doe@gmail.com",
-    document: "97456321558",
-    password: "asdQWE123",
-  };
-
-  const outputSignup = await signup.execute(inputSignup);
-
-  const inputDeposit = {
-    accountId: outputSignup.accountId,
-    assetId: "BTC",
-    quantity: 0.123,
-  };
-
-  await deposit.execute(
-    inputDeposit.accountId,
-    inputDeposit.assetId,
-    inputDeposit.quantity,
-  );
-  await deposit.execute(
-    inputDeposit.accountId,
-    inputDeposit.assetId,
-    inputDeposit.quantity,
-  );
-
-  const outputGetAccount = await getAccount.execute(outputSignup.accountId);
-
-  expect(outputGetAccount.assets[0].quantity).toBe(
-    inputDeposit.quantity + inputDeposit.quantity,
-  );
-});
-
-test("Não deve fazer um depósito de asset inválido", async () => {
-  const inputSignup = {
-    name: "John Doe",
-    email: "john.doe@gmail.com",
-    document: "97456321558",
-    password: "asdQWE123",
-  };
-
-  const outputSignup = await signup.execute(inputSignup);
-
-  await expect(() =>
-    deposit.execute(outputSignup.accountId, "xxx", 10),
-  ).rejects.toThrow("Invalid asset");
-});
-
-test("Não deve fazer um depósito de valor inválido", async () => {
-  const inputSignup = {
-    name: "John Doe",
-    email: "john.doe@gmail.com",
-    document: "97456321558",
-    password: "asdQWE123",
-  };
-
-  const outputSignup = await signup.execute(inputSignup);
-
-  await expect(() =>
-    deposit.execute(outputSignup.accountId, "BTC", -10),
-  ).rejects.toThrow("Invalid quantity");
+  test("Should not make a deposit with an invalid quantity", async () => {
+    await expect(() => deposit.execute(accountId, "BTC", -10)).rejects.toThrow(
+      "Invalid quantity",
+    );
+  });
 });
