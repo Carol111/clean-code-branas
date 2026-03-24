@@ -4,7 +4,8 @@
   "description": "Curso de Clean Code e Clean Architecture com Rodrigo Branas",
   "main": "index.js",
   "scripts": {
-    "coverage": "npx nyc --reporter=lcov --reporter=text ts-node src/api.ts"
+    "coverage": "npx nyc --reporter=lcov --reporter=text ts-node src/api.ts",
+    "start": "nodemon src/api.ts"
   },
   "repository": {
     "type": "git",
