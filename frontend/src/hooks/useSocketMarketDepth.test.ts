@@ -1,26 +1,29 @@
-import { renderHook, waitFor } from "@testing-library/react";
-import { useSocketMarketDepth } from "../../src/hooks/useSocketMarketDepth";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
+import { useSocketMarketDepth } from "./useSocketMarketDepth";
 import { io as ioClient } from "socket.io-client";
 
-jest.mock("socket.io-client");
+vi.mock("socket.io-client", () => ({
+  io: vi.fn(),
+}));
 
 describe("useSocketMarketDepth Hook", () => {
   let mockSocket: any;
-  let mockIo: jest.Mock;
+  let mockIo: any;
 
   beforeEach(() => {
     mockSocket = {
-      on: jest.fn(),
-      emit: jest.fn(),
-      disconnect: jest.fn(),
+      on: vi.fn(),
+      emit: vi.fn(),
+      disconnect: vi.fn(),
     };
 
-    mockIo = ioClient as jest.Mock;
+    mockIo = ioClient as unknown as ReturnType<typeof vi.fn>;
     mockIo.mockReturnValue(mockSocket);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test("should connect and subscribe on mount", () => {
@@ -38,9 +41,12 @@ describe("useSocketMarketDepth Hook", () => {
     const { result } = renderHook(() => useSocketMarketDepth("BTC/USD"));
 
     const connectHandler = mockSocket.on.mock.calls.find(
-      (call) => call[0] === "connect",
+      (call: any) => call[0] === "connect",
     )[1];
-    connectHandler();
+
+    act(() => {
+      connectHandler();
+    });
 
     await waitFor(() => {
       expect(result.current.connected).toBe(true);
@@ -51,9 +57,12 @@ describe("useSocketMarketDepth Hook", () => {
     renderHook(() => useSocketMarketDepth("BTC/USD"));
 
     const connectHandler = mockSocket.on.mock.calls.find(
-      (call) => call[0] === "connect",
+      (call: any) => call[0] === "connect",
     )[1];
-    connectHandler();
+
+    act(() => {
+      connectHandler();
+    });
 
     expect(mockSocket.emit).toHaveBeenCalledWith("subscribe", {
       marketId: "BTC/USD",
@@ -64,7 +73,7 @@ describe("useSocketMarketDepth Hook", () => {
     const { result } = renderHook(() => useSocketMarketDepth("BTC/USD"));
 
     const depthHandler = mockSocket.on.mock.calls.find(
-      (call) => call[0] === "depth",
+      (call: any) => call[0] === "depth",
     )[1];
 
     const mockDepth = {
@@ -75,7 +84,9 @@ describe("useSocketMarketDepth Hook", () => {
       },
     };
 
-    depthHandler(mockDepth);
+    act(() => {
+      depthHandler(mockDepth);
+    });
 
     await waitFor(() => {
       expect(result.current.depth).toEqual(mockDepth.depth);
@@ -86,10 +97,12 @@ describe("useSocketMarketDepth Hook", () => {
     const { result } = renderHook(() => useSocketMarketDepth("BTC/USD"));
 
     const errorHandler = mockSocket.on.mock.calls.find(
-      (call) => call[0] === "error",
+      (call: any) => call[0] === "error",
     )[1];
 
-    errorHandler({ message: "Invalid market" });
+    act(() => {
+      errorHandler({ message: "Invalid market" });
+    });
 
     await waitFor(() => {
       expect(result.current.error).toBe("Invalid market");
@@ -113,7 +126,25 @@ describe("useSocketMarketDepth Hook", () => {
       { initialProps: { marketId: "BTC/USD" } },
     );
 
+    const firstConnect = mockSocket.on.mock.calls.find(
+      (call: any) => call[0] === "connect",
+    )[1];
+
+    act(() => {
+      firstConnect();
+    });
+
     rerender({ marketId: "USD/BTC" });
+
+    const connectCalls = mockSocket.on.mock.calls.filter(
+      (call: any) => call[0] === "connect",
+    );
+
+    const secondConnect = connectCalls[connectCalls.length - 1][1];
+
+    act(() => {
+      secondConnect();
+    });
 
     await waitFor(() => {
       expect(mockSocket.emit).toHaveBeenCalledWith("unsubscribe", {
