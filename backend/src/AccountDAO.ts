@@ -1,8 +1,9 @@
 import pgp from "pg-promise";
+import Account from "./Account";
 
 export default interface AccountDAO {
-  insertAccount(account: any): Promise<void>;
-  selectAccount(accountId: string): Promise<any>;
+  insertAccount(account: Account): Promise<void>;
+  selectAccount(accountId: string): Promise<Account>;
   selectAccountAssets(accountId: string): Promise<any>;
   selectAccountAsset(accountId: string, assetId: string): Promise<any>;
   updateAccountAsset(
@@ -40,7 +41,13 @@ export class AccountDAODatabase implements AccountDAO {
       [accountId],
     );
     await connection.$pool.end();
-    return accountData;
+    return new Account(
+      accountData.account_id,
+      accountData.name,
+      accountData.email,
+      accountData.document,
+      accountData.password,
+    );
   }
 
   async selectAccountAssets(accountId: string) {
