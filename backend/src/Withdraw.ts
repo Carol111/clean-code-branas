@@ -1,33 +1,33 @@
-import AccountDAO from "./AccountDAO";
+import AccountRepository from "./AccountRepository";
 import { isValidUUID } from "./validateUUID";
 
 export default class Withdraw {
-  constructor(readonly accountDAO: AccountDAO) {}
+  constructor(readonly accountRepository: AccountRepository) {}
 
-  async execute(
-    accountId: string,
-    assetId: string,
-    quantity: number,
-  ): Promise<any> {
+  async execute(input: Input): Promise<void> {
+    const { accountId, assetId, quantity } = input;
     if (!isValidUUID(accountId)) throw new Error("Invalid account");
 
-    const accountData = await this.accountDAO.selectAccount(accountId);
+    const accountData = await this.accountRepository.selectAccount(accountId);
 
     if (!accountData) throw new Error("Invalid account");
     if (!["BTC", "USD"].includes(assetId)) throw new Error("Invalid asset");
     if (quantity <= 0) throw new Error("Invalid quantity");
 
-    const accountAssetData = await this.accountDAO.selectAccountAsset(
+    const accountAsset = await this.accountRepository.selectAccountAsset(
       accountId,
       assetId,
     );
 
-    if (!accountAssetData) throw new Error("No funds available for this asset");
-    if (parseFloat(accountAssetData.quantity) < quantity)
-      throw new Error("Insufficient amount for withdrawal");
+    if (!accountAsset) throw new Error("Asset not found");
 
-    const newQuantity = parseFloat(accountAssetData.quantity) - quantity;
-
-    await this.accountDAO.updateAccountAsset(newQuantity, accountId, assetId);
+    accountAsset.withdraw(input.quantity);
+    await this.accountRepository.updateAccountAsset(accountAsset);
   }
 }
+
+type Input = {
+  accountId: string;
+  assetId: string;
+  quantity: number;
+};

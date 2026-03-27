@@ -1,19 +1,19 @@
-import AccountDAO from "./AccountDAO";
+import AccountRepository from "./AccountRepository";
 import { isValidUUID } from "./validateUUID";
 
 export default class GetAccount {
-  constructor(readonly accountDAO: AccountDAO) {}
+  constructor(readonly accountRepository: AccountRepository) {}
 
   async execute(accountId: string): Promise<Output> {
     if (!isValidUUID(accountId)) throw new Error("Invalid account");
 
-    const accountData = await this.accountDAO.selectAccount(accountId);
+    const accountData = await this.accountRepository.selectAccount(accountId);
 
     if (!accountData)
       throw Object.assign(new Error("Account not found"), { statusCode: 404 });
 
     const accountAssetsData =
-      await this.accountDAO.selectAccountAssets(accountId);
+      await this.accountRepository.selectAccountAssets(accountId);
 
     const output: Output = {
       accountId: accountData.accountId,
@@ -26,8 +26,8 @@ export default class GetAccount {
 
     for (const accountAssetData of accountAssetsData) {
       output.assets.push({
-        assetId: accountAssetData.asset_id,
-        quantity: parseFloat(accountAssetData.quantity),
+        assetId: accountAssetData.assetId,
+        quantity: accountAssetData.getQuantity(),
       });
     }
 

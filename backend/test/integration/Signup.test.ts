@@ -1,5 +1,5 @@
 import Signup from "../../src/Signup";
-import { AccountDAODatabase } from "../../src/AccountDAO";
+import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import GetAccount from "../../src/GetAccount";
 
 describe("Signup", () => {
@@ -7,9 +7,9 @@ describe("Signup", () => {
   let getAccount: GetAccount;
 
   beforeEach(() => {
-    const accountDAO = new AccountDAODatabase();
-    signup = new Signup(accountDAO);
-    getAccount = new GetAccount(accountDAO);
+    const accountRepository = new AccountRepositoryDatabase();
+    signup = new Signup(accountRepository);
+    getAccount = new GetAccount(accountRepository);
   });
 
   test("Should create a valid account", async () => {

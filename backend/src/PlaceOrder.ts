@@ -1,12 +1,12 @@
 import crypto from "crypto";
-import AccountDAO from "./AccountDAO";
+import AccountRepository from "./AccountRepository";
 import OrderDAO from "./OrderDAO";
 import { isValidUUID } from "./validateUUID";
 import orderEventEmitter from "./OrderEventEmitter";
 
 export default class PlaceOrder {
   constructor(
-    readonly accountDAO: AccountDAO,
+    readonly accountRepository: AccountRepository,
     readonly orderDAO: OrderDAO,
   ) {}
 
@@ -19,7 +19,7 @@ export default class PlaceOrder {
   ): Promise<any> {
     if (!isValidUUID(accountId)) throw new Error("Invalid account");
 
-    const accountData = await this.accountDAO.selectAccount(accountId);
+    const accountData = await this.accountRepository.selectAccount(accountId);
 
     if (!accountData) throw new Error("Invalid account");
     if (!["BTC/USD", "USD/BTC"].includes(marketId))
@@ -31,7 +31,7 @@ export default class PlaceOrder {
     const assetsId = marketId.split("/");
     const assetId = side === "sell" ? assetsId[0] : assetsId[1];
 
-    const accountAssetData = await this.accountDAO.selectAccountAsset(
+    const accountAssetData = await this.accountRepository.selectAccountAsset(
       accountId,
       assetId,
     );
@@ -40,8 +40,8 @@ export default class PlaceOrder {
 
     if (
       side === "sell"
-        ? parseFloat(accountAssetData.quantity) < quantity
-        : parseFloat(accountAssetData.quantity) < price
+        ? accountAssetData.getQuantity() < quantity
+        : accountAssetData.getQuantity() < price
     )
       throw new Error("Insufficient amount for this order");
 
@@ -61,8 +61,8 @@ export default class PlaceOrder {
 
     if (
       side === "sell"
-        ? parseFloat(accountAssetData.quantity) < quantity + totalAmout
-        : parseFloat(accountAssetData.quantity) < price + totalAmout
+        ? accountAssetData.getQuantity() < quantity + totalAmout
+        : accountAssetData.getQuantity() < price + totalAmout
     )
       throw new Error("Insufficient amount for this order");
 

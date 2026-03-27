@@ -1,8 +1,8 @@
 import Account from "./Account";
-import AccountDAO from "./AccountDAO";
+import AccountRepository from "./AccountRepository";
 
 export default class Signup {
-  constructor(readonly accountDAO: AccountDAO) {}
+  constructor(readonly accountRepository: AccountRepository) {}
 
   async execute(input: any): Promise<any> {
     const account = Account.create(
@@ -11,7 +11,7 @@ export default class Signup {
       input.document,
       input.password,
     );
-    await this.accountDAO.insertAccount(account);
+    await this.accountRepository.insertAccount(account);
     return {
       accountId: account.accountId,
     };

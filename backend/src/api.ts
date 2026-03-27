@@ -9,7 +9,7 @@ import Withdraw from "./Withdraw";
 import PlaceOrder from "./PlaceOrder";
 import GetOrder from "./GetOrder";
 import GetDepth from "./GetDepth";
-import { AccountDAODatabase } from "./AccountDAO";
+import { AccountRepositoryDatabase } from "./AccountRepository";
 import { OrderDAODatabase } from "./OrderDAO";
 import { WebSocketHandlers } from "./WebSocketHandlers";
 
@@ -22,13 +22,13 @@ const app = express();
 app.use(express.json());
 app.use(cors(corsOptions));
 
-const accountDAO = new AccountDAODatabase();
+const accountRepository = new AccountRepositoryDatabase();
 const orderDAO = new OrderDAODatabase();
-const signup = new Signup(accountDAO);
-const getAccount = new GetAccount(accountDAO);
-const deposit = new Deposit(accountDAO);
-const withdraw = new Withdraw(accountDAO);
-const placeOrder = new PlaceOrder(accountDAO, orderDAO);
+const signup = new Signup(accountRepository);
+const getAccount = new GetAccount(accountRepository);
+const deposit = new Deposit(accountRepository);
+const withdraw = new Withdraw(accountRepository);
+const placeOrder = new PlaceOrder(accountRepository, orderDAO);
 const getOrder = new GetOrder(orderDAO);
 const getDepth = new GetDepth(orderDAO);
 

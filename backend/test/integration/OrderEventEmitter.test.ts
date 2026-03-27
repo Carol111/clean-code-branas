@@ -3,7 +3,7 @@ import orderEventEmitter from "../../src/OrderEventEmitter";
 import Signup from "../../src/Signup";
 import Deposit from "../../src/Deposit";
 import PlaceOrder from "../../src/PlaceOrder";
-import { AccountDAODatabase } from "../../src/AccountDAO";
+import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import { OrderDAODatabase } from "../../src/OrderDAO";
 
 describe("OrderEventEmitter", () => {
@@ -13,11 +13,11 @@ describe("OrderEventEmitter", () => {
   let accountId: string;
 
   beforeEach(async () => {
-    const accountDAO = new AccountDAODatabase();
+    const accountRepository = new AccountRepositoryDatabase();
     const orderDAO = new OrderDAODatabase();
-    signup = new Signup(accountDAO);
-    deposit = new Deposit(accountDAO);
-    placeOrder = new PlaceOrder(accountDAO, orderDAO);
+    signup = new Signup(accountRepository);
+    deposit = new Deposit(accountRepository);
+    placeOrder = new PlaceOrder(accountRepository, orderDAO);
 
     const outputSignup = await signup.execute({
       name: "John Doe",
@@ -28,7 +28,7 @@ describe("OrderEventEmitter", () => {
 
     accountId = outputSignup.accountId;
 
-    await deposit.execute(accountId, "BTC", 10);
+    await deposit.execute({ accountId, assetId: "BTC", quantity: 10 });
   });
 
   afterEach(() => {

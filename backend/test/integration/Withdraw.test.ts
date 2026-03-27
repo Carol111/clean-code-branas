@@ -1,7 +1,7 @@
 import Signup from "../../src/Signup";
 import Deposit from "../../src/Deposit";
 import Withdraw from "../../src/Withdraw";
-import { AccountDAODatabase } from "../../src/AccountDAO";
+import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import GetAccount from "../../src/GetAccount";
 
 describe("Withdraw", () => {
@@ -12,11 +12,11 @@ describe("Withdraw", () => {
   let accountId: string;
 
   beforeEach(async () => {
-    const accountDAO = new AccountDAODatabase();
-    signup = new Signup(accountDAO);
-    getAccount = new GetAccount(accountDAO);
-    withdraw = new Withdraw(accountDAO);
-    deposit = new Deposit(accountDAO);
+    const accountRepository = new AccountRepositoryDatabase();
+    signup = new Signup(accountRepository);
+    getAccount = new GetAccount(accountRepository);
+    withdraw = new Withdraw(accountRepository);
+    deposit = new Deposit(accountRepository);
 
     const outputSignup = await signup.execute({
       name: "John Doe",
@@ -29,9 +29,17 @@ describe("Withdraw", () => {
   });
 
   test("Should make a valid withdrawal", async () => {
-    await deposit.execute(accountId, "USD", 10);
+    await deposit.execute({
+      accountId,
+      assetId: "USD",
+      quantity: 10,
+    });
 
-    await withdraw.execute(accountId, "USD", 7);
+    await withdraw.execute({
+      accountId,
+      assetId: "USD",
+      quantity: 7,
+    });
 
     const outputGetAccount = await getAccount.execute(accountId);
 
@@ -44,12 +52,12 @@ describe("Withdraw", () => {
     {
       deposit: { assetId: "USD", quantity: 10 },
       withdraw: { assetId: "USD", quantity: 15 },
-      error: "Insufficient amount for withdrawal",
+      error: "Insufficient funds",
     },
     {
       deposit: { assetId: "USD", quantity: 10 },
       withdraw: { assetId: "BTC", quantity: 5 },
-      error: "No funds available for this asset",
+      error: "Asset not found",
     },
     {
       deposit: { assetId: "USD", quantity: 10 },
@@ -68,18 +76,18 @@ describe("Withdraw", () => {
       withdraw: { assetId: string; quantity: number };
       error: string;
     }) => {
-      await deposit.execute(
+      await deposit.execute({
         accountId,
-        transaction.deposit.assetId,
-        transaction.deposit.quantity,
-      );
+        assetId: transaction.deposit.assetId,
+        quantity: transaction.deposit.quantity,
+      });
 
       await expect(() =>
-        withdraw.execute(
+        withdraw.execute({
           accountId,
-          transaction.withdraw.assetId,
-          transaction.withdraw.quantity,
-        ),
+          assetId: transaction.withdraw.assetId,
+          quantity: transaction.withdraw.quantity,
+        }),
       ).rejects.toThrow(transaction.error);
     },
   );

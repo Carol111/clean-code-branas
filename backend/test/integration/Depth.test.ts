@@ -2,7 +2,7 @@ import Signup from "../../src/Signup";
 import Deposit from "../../src/Deposit";
 import PlaceOrder from "../../src/PlaceOrder";
 import GetDepth from "../../src/GetDepth";
-import { AccountDAODatabase } from "../../src/AccountDAO";
+import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import { OrderDAODatabase } from "../../src/OrderDAO";
 
 describe("Depth", () => {
@@ -12,11 +12,11 @@ describe("Depth", () => {
   let getDepth: GetDepth;
 
   beforeEach(() => {
-    const accountDAO = new AccountDAODatabase();
+    const accountRepository = new AccountRepositoryDatabase();
     const orderDAO = new OrderDAODatabase();
-    signup = new Signup(accountDAO);
-    deposit = new Deposit(accountDAO);
-    placeOrder = new PlaceOrder(accountDAO, orderDAO);
+    signup = new Signup(accountRepository);
+    deposit = new Deposit(accountRepository);
+    placeOrder = new PlaceOrder(accountRepository, orderDAO);
     getDepth = new GetDepth(orderDAO);
   });
 
@@ -29,7 +29,11 @@ describe("Depth", () => {
     });
     const accountId1 = outputSignup1.accountId;
 
-    await deposit.execute(accountId1, "BTC", 10);
+    await deposit.execute({
+      accountId: accountId1,
+      assetId: "BTC",
+      quantity: 10,
+    });
 
     await placeOrder.execute(accountId1, "BTC/USD", "sell", 84500, 2);
     await placeOrder.execute(accountId1, "BTC/USD", "sell", 87500, 4);
@@ -44,7 +48,11 @@ describe("Depth", () => {
     });
     const accountId2 = outputSignup2.accountId;
 
-    await deposit.execute(accountId2, "USD", 1000000);
+    await deposit.execute({
+      accountId: accountId2,
+      assetId: "USD",
+      quantity: 1000000,
+    });
     await placeOrder.execute(accountId2, "BTC/USD", "buy", 82150, 1);
     await placeOrder.execute(accountId2, "BTC/USD", "buy", 84150, 2);
     await placeOrder.execute(accountId2, "BTC/USD", "buy", 82850, 2);

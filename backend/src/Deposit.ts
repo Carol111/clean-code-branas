@@ -1,35 +1,47 @@
-import AccountDAO from "./AccountDAO";
+import AccountAsset from "./AccountAsset";
+import AccountRepository from "./AccountRepository";
 import { isValidUUID } from "./validateUUID";
 
 export default class Deposit {
-  constructor(readonly accountDAO: AccountDAO) {}
+  constructor(readonly accountRepository: AccountRepository) {}
 
-  async execute(
-    accountId: string,
-    assetId: string,
-    quantity: number,
-  ): Promise<any> {
-    if (!isValidUUID(accountId)) throw new Error("Invalid account");
+  async execute(input: Input): Promise<void> {
+    if (!isValidUUID(input.accountId)) throw new Error("Invalid account");
 
-    const accountData = await this.accountDAO.selectAccount(accountId);
-
-    if (!accountData) throw new Error("Invalid account");
-    if (!["BTC", "USD"].includes(assetId)) throw new Error("Invalid asset");
-    if (quantity <= 0) throw new Error("Invalid quantity");
-
-    const accountAssetData = await this.accountDAO.selectAccountAsset(
-      accountId,
-      assetId,
+    const accountData = await this.accountRepository.selectAccount(
+      input.accountId,
     );
 
-    if (accountAssetData) {
-      const newQuantity = parseFloat(accountAssetData.quantity) + quantity;
+    if (!accountData) throw new Error("Invalid account");
+    if (!["BTC", "USD"].includes(input.assetId))
+      throw new Error("Invalid asset");
+    if (input.quantity <= 0) throw new Error("Invalid quantity");
 
-      await this.accountDAO.updateAccountAsset(newQuantity, accountId, assetId);
+    const currentAccountAsset = await this.accountRepository.selectAccountAsset(
+      input.accountId,
+      input.assetId,
+    );
+
+    if (currentAccountAsset) {
+      currentAccountAsset.deposit(input.quantity);
+
+      await this.accountRepository.updateAccountAsset(currentAccountAsset);
 
       return;
     }
 
-    await this.accountDAO.insertAccountAsset(quantity, accountId, assetId);
+    const accountAsset = new AccountAsset(
+      input.accountId,
+      input.assetId,
+      input.quantity,
+    );
+
+    await this.accountRepository.insertAccountAsset(accountAsset);
   }
 }
+
+type Input = {
+  accountId: string;
+  assetId: string;
+  quantity: number;
+};

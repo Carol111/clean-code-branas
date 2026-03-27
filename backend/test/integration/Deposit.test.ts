@@ -1,6 +1,6 @@
 import Signup from "../../src/Signup";
 import Deposit from "../../src/Deposit";
-import { AccountDAODatabase } from "../../src/AccountDAO";
+import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import GetAccount from "../../src/GetAccount";
 
 describe("Deposit", () => {
@@ -10,10 +10,10 @@ describe("Deposit", () => {
   let accountId: string;
 
   beforeEach(async () => {
-    const accountDAO = new AccountDAODatabase();
-    signup = new Signup(accountDAO);
-    getAccount = new GetAccount(accountDAO);
-    deposit = new Deposit(accountDAO);
+    const accountRepository = new AccountRepositoryDatabase();
+    signup = new Signup(accountRepository);
+    getAccount = new GetAccount(accountRepository);
+    deposit = new Deposit(accountRepository);
 
     const inputSignup = {
       name: "John Doe",
@@ -32,11 +32,11 @@ describe("Deposit", () => {
   ])(
     "Should make a valid deposit",
     async (depositData: { assetId: string; quantity: number }) => {
-      await deposit.execute(
+      await deposit.execute({
         accountId,
-        depositData.assetId,
-        depositData.quantity,
-      );
+        assetId: depositData.assetId,
+        quantity: depositData.quantity,
+      });
 
       const outputGetAccount = await getAccount.execute(accountId);
 
@@ -47,8 +47,16 @@ describe("Deposit", () => {
   );
 
   test("Should make a valid deposit and increment the current balance", async () => {
-    await deposit.execute(accountId, "BTC", 0.123);
-    await deposit.execute(accountId, "BTC", 0.123);
+    await deposit.execute({
+      accountId,
+      assetId: "BTC",
+      quantity: 0.123,
+    });
+    await deposit.execute({
+      accountId,
+      assetId: "BTC",
+      quantity: 0.123,
+    });
 
     const outputGetAccount = await getAccount.execute(accountId);
 
@@ -56,14 +64,22 @@ describe("Deposit", () => {
   });
 
   test("Should not make a deposit with an invalid asset", async () => {
-    await expect(() => deposit.execute(accountId, "xxx", 10)).rejects.toThrow(
-      "Invalid asset",
-    );
+    await expect(() =>
+      deposit.execute({
+        accountId,
+        assetId: "xxx",
+        quantity: 10,
+      }),
+    ).rejects.toThrow("Invalid asset");
   });
 
   test("Should not make a deposit with an invalid quantity", async () => {
-    await expect(() => deposit.execute(accountId, "BTC", -10)).rejects.toThrow(
-      "Invalid quantity",
-    );
+    await expect(() =>
+      deposit.execute({
+        accountId,
+        assetId: "BTC",
+        quantity: -10,
+      }),
+    ).rejects.toThrow("Invalid quantity");
   });
 });

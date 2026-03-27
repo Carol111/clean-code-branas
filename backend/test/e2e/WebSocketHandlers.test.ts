@@ -7,7 +7,7 @@ import Signup from "../../src/Signup";
 import Deposit from "../../src/Deposit";
 import PlaceOrder from "../../src/PlaceOrder";
 import GetDepth from "../../src/GetDepth";
-import { AccountDAODatabase } from "../../src/AccountDAO";
+import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import { OrderDAODatabase } from "../../src/OrderDAO";
 
 describe("WebSocketHandlers", () => {
@@ -25,11 +25,11 @@ describe("WebSocketHandlers", () => {
     httpServer = createServer();
     io = new Server(httpServer);
 
-    const accountDAO = new AccountDAODatabase();
+    const accountRepository = new AccountRepositoryDatabase();
     const orderDAO = new OrderDAODatabase();
-    signup = new Signup(accountDAO);
-    deposit = new Deposit(accountDAO);
-    placeOrder = new PlaceOrder(accountDAO, orderDAO);
+    signup = new Signup(accountRepository);
+    deposit = new Deposit(accountRepository);
+    placeOrder = new PlaceOrder(accountRepository, orderDAO);
     getDepth = new GetDepth(orderDAO);
 
     const outputSignup = await signup.execute({
@@ -39,7 +39,7 @@ describe("WebSocketHandlers", () => {
       password: "asdQWE123",
     });
     accountId = outputSignup.accountId;
-    await deposit.execute(outputSignup.accountId, "BTC", 10);
+    await deposit.execute({ accountId, assetId: "BTC", quantity: 10 });
     await placeOrder.execute(
       outputSignup.accountId,
       "BTC/USD",
