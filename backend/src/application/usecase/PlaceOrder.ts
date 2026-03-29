@@ -46,6 +46,7 @@ export default class PlaceOrder {
       input.marketId,
       input.side,
       input.accountId,
+      "open",
     );
 
     let totalAmout = 0;
