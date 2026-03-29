@@ -1,83 +1,75 @@
 import crypto from "crypto";
 import AccountRepository from "./AccountRepository";
-import OrderDAO from "./OrderDAO";
+import OrderRepository from "./OrderRepository";
 import { isValidUUID } from "./validateUUID";
 import orderEventEmitter from "./OrderEventEmitter";
+import Order from "./Order";
 
 export default class PlaceOrder {
   constructor(
     readonly accountRepository: AccountRepository,
-    readonly orderDAO: OrderDAO,
+    readonly orderRepository: OrderRepository,
   ) {}
 
-  async execute(
-    accountId: string,
-    marketId: string,
-    side: string,
-    price: number,
-    quantity: number,
-  ): Promise<any> {
-    if (!isValidUUID(accountId)) throw new Error("Invalid account");
+  async execute(input: Input): Promise<any> {
+    if (!isValidUUID(input.accountId)) throw new Error("Invalid account");
 
-    const accountData = await this.accountRepository.selectAccount(accountId);
+    const accountData = await this.accountRepository.selectAccount(
+      input.accountId,
+    );
 
     if (!accountData) throw new Error("Invalid account");
-    if (!["BTC/USD", "USD/BTC"].includes(marketId))
+    if (!["BTC/USD", "USD/BTC"].includes(input.marketId))
       throw new Error("Invalid order");
-    if (!["sell", "buy"].includes(side)) throw new Error("Invalid order");
-    if (quantity <= 0) throw new Error("Invalid quantity");
-    if (price <= 0) throw new Error("Invalid price");
+    if (!["sell", "buy"].includes(input.side)) throw new Error("Invalid order");
+    if (input.quantity <= 0) throw new Error("Invalid quantity");
+    if (input.price <= 0) throw new Error("Invalid price");
 
-    const assetsId = marketId.split("/");
-    const assetId = side === "sell" ? assetsId[0] : assetsId[1];
+    const assetsId = input.marketId.split("/");
+    const assetId = input.side === "sell" ? assetsId[0] : assetsId[1];
 
     const accountAssetData = await this.accountRepository.selectAccountAsset(
-      accountId,
+      input.accountId,
       assetId,
     );
 
     if (!accountAssetData) throw new Error("No funds available for this order");
 
     if (
-      side === "sell"
-        ? accountAssetData.getQuantity() < quantity
-        : accountAssetData.getQuantity() < price
+      input.side === "sell"
+        ? accountAssetData.getQuantity() < input.quantity
+        : accountAssetData.getQuantity() < input.price
     )
       throw new Error("Insufficient amount for this order");
 
-    const ordersData = await this.orderDAO.selectOrders(
-      marketId,
-      side,
-      accountId,
+    const ordersData = await this.orderRepository.selectOrders(
+      input.marketId,
+      input.side,
+      input.accountId,
     );
 
     let totalAmout = 0;
     for (const orderData of ordersData) {
       totalAmout +=
-        side === "sell"
-          ? parseFloat(orderData.quantity)
-          : parseFloat(orderData.price);
+        input.side === "sell" ? orderData.quantity : orderData.price;
     }
 
     if (
-      side === "sell"
-        ? accountAssetData.getQuantity() < quantity + totalAmout
-        : accountAssetData.getQuantity() < price + totalAmout
+      input.side === "sell"
+        ? accountAssetData.getQuantity() < input.quantity + totalAmout
+        : accountAssetData.getQuantity() < input.price + totalAmout
     )
       throw new Error("Insufficient amount for this order");
 
-    const order = {
-      orderId: crypto.randomUUID(),
-      marketId: marketId,
-      accountId: accountId,
-      side: side,
-      quantity: quantity,
-      price: price,
-      status: "open",
-      timestamp: new Date(),
-    };
+    const order = Order.create(
+      input.marketId,
+      input.accountId,
+      input.side,
+      input.quantity,
+      input.price,
+    );
 
-    await this.orderDAO.insertOrder(order);
+    await this.orderRepository.insertOrder(order);
 
     orderEventEmitter.emitOrderCreated({
       orderId: order.orderId,
@@ -95,3 +87,11 @@ export default class PlaceOrder {
     };
   }
 }
+
+type Input = {
+  marketId: string;
+  accountId: string;
+  side: string;
+  quantity: number;
+  price: number;
+};

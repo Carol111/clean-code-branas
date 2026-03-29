@@ -1,7 +1,8 @@
-import OrderDAO from "./OrderDAO";
+import Order from "./Order";
+import OrderRepository from "./OrderRepository";
 
 export default class GetDepth {
-  constructor(readonly orderDAO: OrderDAO) {}
+  constructor(readonly orderRepository: OrderRepository) {}
 
   roundToNearest(value: number, precision: number) {
     const divisor = Math.pow(10, precision);
@@ -13,32 +14,29 @@ export default class GetDepth {
       throw new Error("Invalid market");
     if (precision < 0) throw new Error("Invalid precision");
 
-    const buyOrders = await this.orderDAO.selectOrders(
+    const buyOrders = await this.orderRepository.selectOrders(
       marketId,
       "buy",
       undefined,
       "open",
     );
 
-    const buyOrdersGrouped = buyOrders.reduce(
-      (
-        acc: { quantity: number; price: number }[],
-        cur: { quantity: string; price: string },
-      ) => {
-        const roundedPrice = this.roundToNearest(
-          parseFloat(cur.price),
-          precision,
-        );
-        const samePrice = acc.find((value) => value.price === roundedPrice);
-        if (!samePrice) {
-          acc.push({ quantity: parseFloat(cur.quantity), price: roundedPrice });
-        } else {
-          samePrice.quantity = parseFloat(cur.quantity) + samePrice.quantity;
-        }
-        return acc;
-      },
-      [] as { quantity: number; price: number }[],
-    );
+    const buyOrdersGrouped: { quantity: number; price: number }[] = [];
+
+    for (const buyOrder of buyOrders) {
+      const roundedPrice = this.roundToNearest(buyOrder.price, precision);
+      const samePrice = buyOrdersGrouped.find(
+        (value) => value.price === roundedPrice,
+      );
+      if (!samePrice) {
+        buyOrdersGrouped.push({
+          quantity: buyOrder.quantity,
+          price: roundedPrice,
+        });
+      } else {
+        samePrice.quantity = buyOrder.quantity + samePrice.quantity;
+      }
+    }
 
     const buyOrdersSorted = buyOrdersGrouped.sort(
       (
@@ -47,32 +45,29 @@ export default class GetDepth {
       ) => b.price - a.price,
     );
 
-    const sellOrders = await this.orderDAO.selectOrders(
+    const sellOrders = await this.orderRepository.selectOrders(
       marketId,
       "sell",
       undefined,
       "open",
     );
 
-    const sellOrdersGrouped = sellOrders.reduce(
-      (
-        acc: { quantity: number; price: number }[],
-        cur: { quantity: string; price: string },
-      ) => {
-        const roundedPrice = this.roundToNearest(
-          parseFloat(cur.price),
-          precision,
-        );
-        const samePrice = acc.find((value) => value.price === roundedPrice);
-        if (!samePrice) {
-          acc.push({ quantity: parseFloat(cur.quantity), price: roundedPrice });
-        } else {
-          samePrice.quantity = parseFloat(cur.quantity) + samePrice.quantity;
-        }
-        return acc;
-      },
-      [] as { quantity: number; price: number }[],
-    );
+    const sellOrdersGrouped: { quantity: number; price: number }[] = [];
+
+    for (const sellOrder of sellOrders) {
+      const roundedPrice = this.roundToNearest(sellOrder.price, precision);
+      const samePrice = sellOrdersGrouped.find(
+        (value) => value.price === roundedPrice,
+      );
+      if (!samePrice) {
+        sellOrdersGrouped.push({
+          quantity: sellOrder.quantity,
+          price: roundedPrice,
+        });
+      } else {
+        samePrice.quantity = sellOrder.quantity + samePrice.quantity;
+      }
+    }
 
     const sellOrdersSorted = sellOrdersGrouped.sort(
       (

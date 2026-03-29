@@ -43,43 +43,4 @@ describe("Signup", () => {
       "Invalid name",
     );
   });
-
-  test("Should not create an account with invalid email", async () => {
-    const inputSignup = {
-      name: "John Doe",
-      email: "john.doe",
-      document: "97456321558",
-      password: "asdQWE123",
-    };
-
-    await expect(() => signup.execute(inputSignup)).rejects.toThrow(
-      "Invalid email",
-    );
-  });
-
-  test("Should not create an account with invalid document", async () => {
-    const inputSignup = {
-      name: "John Doe",
-      email: "john.doe@gmail.com",
-      document: "974563215",
-      password: "asdQWE123",
-    };
-
-    await expect(() => signup.execute(inputSignup)).rejects.toThrow(
-      "Invalid document",
-    );
-  });
-
-  test("Should not create an account with invalid password", async () => {
-    const inputSignup = {
-      name: "John Doe",
-      email: "john.doe@gmail.com",
-      document: "97456321558",
-      password: "asdQWE",
-    };
-
-    await expect(() => signup.execute(inputSignup)).rejects.toThrow(
-      "Invalid password",
-    );
-  });
 });

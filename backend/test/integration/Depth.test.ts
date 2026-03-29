@@ -3,7 +3,7 @@ import Deposit from "../../src/Deposit";
 import PlaceOrder from "../../src/PlaceOrder";
 import GetDepth from "../../src/GetDepth";
 import { AccountRepositoryDatabase } from "../../src/AccountRepository";
-import { OrderDAODatabase } from "../../src/OrderDAO";
+import { OrderRepositoryDatabase } from "../../src/OrderRepository";
 
 describe("Depth", () => {
   let signup: Signup;
@@ -13,11 +13,11 @@ describe("Depth", () => {
 
   beforeEach(() => {
     const accountRepository = new AccountRepositoryDatabase();
-    const orderDAO = new OrderDAODatabase();
+    const orderRepository = new OrderRepositoryDatabase();
     signup = new Signup(accountRepository);
     deposit = new Deposit(accountRepository);
-    placeOrder = new PlaceOrder(accountRepository, orderDAO);
-    getDepth = new GetDepth(orderDAO);
+    placeOrder = new PlaceOrder(accountRepository, orderRepository);
+    getDepth = new GetDepth(orderRepository);
   });
 
   test("Should get market depth", async () => {
@@ -35,10 +35,34 @@ describe("Depth", () => {
       quantity: 10,
     });
 
-    await placeOrder.execute(accountId1, "BTC/USD", "sell", 84500, 2);
-    await placeOrder.execute(accountId1, "BTC/USD", "sell", 87500, 4);
-    await placeOrder.execute(accountId1, "BTC/USD", "sell", 84600, 1);
-    await placeOrder.execute(accountId1, "BTC/USD", "sell", 88000, 1);
+    await placeOrder.execute({
+      accountId: accountId1,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 84500,
+      quantity: 2,
+    });
+    await placeOrder.execute({
+      accountId: accountId1,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 87500,
+      quantity: 4,
+    });
+    await placeOrder.execute({
+      accountId: accountId1,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 84600,
+      quantity: 1,
+    });
+    await placeOrder.execute({
+      accountId: accountId1,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 88000,
+      quantity: 1,
+    });
 
     const outputSignup2 = await signup.execute({
       name: "John Doe USD",
@@ -53,9 +77,27 @@ describe("Depth", () => {
       assetId: "USD",
       quantity: 1000000,
     });
-    await placeOrder.execute(accountId2, "BTC/USD", "buy", 82150, 1);
-    await placeOrder.execute(accountId2, "BTC/USD", "buy", 84150, 2);
-    await placeOrder.execute(accountId2, "BTC/USD", "buy", 82850, 2);
+    await placeOrder.execute({
+      accountId: accountId2,
+      marketId: "BTC/USD",
+      side: "buy",
+      price: 82150,
+      quantity: 1,
+    });
+    await placeOrder.execute({
+      accountId: accountId2,
+      marketId: "BTC/USD",
+      side: "buy",
+      price: 84150,
+      quantity: 2,
+    });
+    await placeOrder.execute({
+      accountId: accountId2,
+      marketId: "BTC/USD",
+      side: "buy",
+      price: 82850,
+      quantity: 2,
+    });
 
     const outputGetDepthBTC = await getDepth.execute("BTC/USD", 3);
     expect(outputGetDepthBTC.sells.length).toBe(3);

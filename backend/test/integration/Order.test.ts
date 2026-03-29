@@ -3,7 +3,7 @@ import Deposit from "../../src/Deposit";
 import PlaceOrder from "../../src/PlaceOrder";
 import GetOrder from "../../src/GetOrder";
 import { AccountRepositoryDatabase } from "../../src/AccountRepository";
-import { OrderDAODatabase } from "../../src/OrderDAO";
+import { OrderRepositoryDatabase } from "../../src/OrderRepository";
 import orderEventEmitter from "../../src/OrderEventEmitter";
 
 describe("Order", () => {
@@ -15,11 +15,11 @@ describe("Order", () => {
 
   beforeEach(async () => {
     const accountRepository = new AccountRepositoryDatabase();
-    const orderDAO = new OrderDAODatabase();
+    const orderRepository = new OrderRepositoryDatabase();
     signup = new Signup(accountRepository);
     deposit = new Deposit(accountRepository);
-    placeOrder = new PlaceOrder(accountRepository, orderDAO);
-    getOrder = new GetOrder(orderDAO);
+    placeOrder = new PlaceOrder(accountRepository, orderRepository);
+    getOrder = new GetOrder(orderRepository);
 
     const outputSignup = await signup.execute({
       name: "John Doe",
@@ -39,13 +39,13 @@ describe("Order", () => {
   });
 
   test("Should create a sell order", async () => {
-    const outputPlaceOrder = await placeOrder.execute(
+    const outputPlaceOrder = await placeOrder.execute({
       accountId,
-      "BTC/USD",
-      "sell",
-      94000,
-      1,
-    );
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 94000,
+      quantity: 1,
+    });
 
     expect(outputPlaceOrder.orderId).toBeDefined();
 
@@ -60,13 +60,13 @@ describe("Order", () => {
   });
 
   test("Should create a buy order", async () => {
-    const outputPlaceOrder = await placeOrder.execute(
+    const outputPlaceOrder = await placeOrder.execute({
       accountId,
-      "BTC/USD",
-      "buy",
-      94,
-      0.001,
-    );
+      marketId: "BTC/USD",
+      side: "buy",
+      price: 94,
+      quantity: 0.001,
+    });
     expect(outputPlaceOrder.orderId).toBeDefined();
 
     const outputGetOrder = await getOrder.execute(outputPlaceOrder.orderId);
@@ -81,15 +81,33 @@ describe("Order", () => {
 
   test("Should not create sell order when balance is insufficient", async () => {
     await expect(() =>
-      placeOrder.execute(accountId, "BTC/USD", "sell", 94000, 2),
+      placeOrder.execute({
+        accountId,
+        marketId: "BTC/USD",
+        side: "sell",
+        price: 94000,
+        quantity: 2,
+      }),
     ).rejects.toThrow("Insufficient amount for this order");
   });
 
   test("Should not create sell order when balance is already reserved", async () => {
-    await placeOrder.execute(accountId, "BTC/USD", "sell", 94000, 1);
+    await placeOrder.execute({
+      accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 94000,
+      quantity: 1,
+    });
 
     await expect(() =>
-      placeOrder.execute(accountId, "BTC/USD", "sell", 94000, 1),
+      placeOrder.execute({
+        accountId,
+        marketId: "BTC/USD",
+        side: "sell",
+        price: 94000,
+        quantity: 1,
+      }),
     ).rejects.toThrow("Insufficient amount for this order");
   });
 
@@ -132,13 +150,13 @@ describe("Order", () => {
       error: string;
     }) => {
       await expect(() =>
-        placeOrder.execute(
+        placeOrder.execute({
           accountId,
-          order.marketId,
-          order.side,
-          order.price,
-          order.quantity,
-        ),
+          marketId: order.marketId,
+          side: order.side,
+          price: order.price,
+          quantity: order.quantity,
+        }),
       ).rejects.toThrow(order.error);
     },
   );
@@ -149,7 +167,13 @@ describe("Order", () => {
       eventPayload = order;
     });
 
-    await placeOrder.execute(accountId, "BTC/USD", "sell", 94000, 1);
+    await placeOrder.execute({
+      accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 94000,
+      quantity: 1,
+    });
 
     expect(eventPayload).not.toBeNull();
     expect(eventPayload).toEqual(
@@ -170,7 +194,13 @@ describe("Order", () => {
     });
 
     try {
-      await placeOrder.execute(accountId, "BTC/USD", "sell", 94000, 2);
+      await placeOrder.execute({
+        accountId,
+        marketId: "BTC/USD",
+        side: "sell",
+        price: 94000,
+        quantity: 2,
+      });
     } catch (error) {}
 
     expect(eventPayload).toBeNull();

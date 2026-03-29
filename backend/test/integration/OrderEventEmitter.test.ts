@@ -4,7 +4,7 @@ import Signup from "../../src/Signup";
 import Deposit from "../../src/Deposit";
 import PlaceOrder from "../../src/PlaceOrder";
 import { AccountRepositoryDatabase } from "../../src/AccountRepository";
-import { OrderDAODatabase } from "../../src/OrderDAO";
+import { OrderRepositoryDatabase } from "../../src/OrderRepository";
 
 describe("OrderEventEmitter", () => {
   let signup: Signup;
@@ -14,10 +14,10 @@ describe("OrderEventEmitter", () => {
 
   beforeEach(async () => {
     const accountRepository = new AccountRepositoryDatabase();
-    const orderDAO = new OrderDAODatabase();
+    const orderRepository = new OrderRepositoryDatabase();
     signup = new Signup(accountRepository);
     deposit = new Deposit(accountRepository);
-    placeOrder = new PlaceOrder(accountRepository, orderDAO);
+    placeOrder = new PlaceOrder(accountRepository, orderRepository);
 
     const outputSignup = await signup.execute({
       name: "John Doe",
@@ -44,7 +44,13 @@ describe("OrderEventEmitter", () => {
       expect(order.price).toBe(84000);
     });
 
-    await placeOrder.execute(accountId, "BTC/USD", "sell", 84000, 1);
+    await placeOrder.execute({
+      accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 84000,
+      quantity: 1,
+    });
   });
 
   test("Should be singleton - same instance", () => {
@@ -63,7 +69,13 @@ describe("OrderEventEmitter", () => {
     orderEventEmitter.onOrderCreated(listener1);
     orderEventEmitter.onOrderCreated(listener2);
 
-    await placeOrder.execute(accountId, "BTC/USD", "sell", 84000, 1);
+    await placeOrder.execute({
+      accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 84000,
+      quantity: 1,
+    });
 
     expect(count).toBe(2);
   });
@@ -75,7 +87,13 @@ describe("OrderEventEmitter", () => {
     orderEventEmitter.onOrderCreated(listener);
     orderEventEmitter.removeOrderCreatedListener(listener);
 
-    await placeOrder.execute(accountId, "BTC/USD", "sell", 84000, 1);
+    await placeOrder.execute({
+      accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 84000,
+      quantity: 1,
+    });
 
     expect(callCount).toBe(0);
   });

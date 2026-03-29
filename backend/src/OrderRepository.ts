@@ -1,17 +1,18 @@
 import pgp from "pg-promise";
+import Order from "./Order";
 
-export default interface OrderDAO {
+export default interface OrderRepository {
   selectOrders(
     marketId: string,
     side: string,
     accountId?: string,
     status?: string,
-  ): Promise<any>;
-  selectOrder(orderId: string): Promise<any>;
-  insertOrder(order: any): Promise<any>;
+  ): Promise<Order[]>;
+  selectOrder(orderId: string): Promise<Order>;
+  insertOrder(order: Order): Promise<void>;
 }
 
-export class OrderDAODatabase implements OrderDAO {
+export class OrderRepositoryDatabase implements OrderRepository {
   async selectOrders(
     marketId: string,
     side: string,
@@ -31,9 +32,25 @@ export class OrderDAODatabase implements OrderDAO {
       .concat(status ? [status] : []);
 
     const ordersData = await connection.query(query, params);
-
     await connection.$pool.end();
-    return ordersData;
+
+    const orders: Order[] = [];
+
+    for (const orderData of ordersData) {
+      orders.push(
+        new Order(
+          orderData.order_id,
+          orderData.market_id,
+          orderData.account_id,
+          orderData.side,
+          parseFloat(orderData.quantity),
+          parseFloat(orderData.price),
+          orderData.status,
+          orderData.timestamp,
+        ),
+      );
+    }
+    return orders;
   }
 
   async selectOrder(orderId: string) {
@@ -43,10 +60,20 @@ export class OrderDAODatabase implements OrderDAO {
       [orderId],
     );
     await connection.$pool.end();
-    return orderData;
+
+    return new Order(
+      orderData.order_id,
+      orderData.market_id,
+      orderData.account_id,
+      orderData.side,
+      parseFloat(orderData.quantity),
+      parseFloat(orderData.price),
+      orderData.status,
+      orderData.timestamp,
+    );
   }
 
-  async insertOrder(order: any) {
+  async insertOrder(order: Order) {
     const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
     await connection.query(
       "insert into ccca.order (order_id, market_id, account_id, side, quantity, price, status, timestamp) values ($1, $2, $3, $4, $5, $6, $7, $8)",

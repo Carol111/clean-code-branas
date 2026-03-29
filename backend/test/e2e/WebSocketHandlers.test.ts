@@ -8,7 +8,7 @@ import Deposit from "../../src/Deposit";
 import PlaceOrder from "../../src/PlaceOrder";
 import GetDepth from "../../src/GetDepth";
 import { AccountRepositoryDatabase } from "../../src/AccountRepository";
-import { OrderDAODatabase } from "../../src/OrderDAO";
+import { OrderRepositoryDatabase } from "../../src/OrderRepository";
 
 describe("WebSocketHandlers", () => {
   let httpServer: HttpServer;
@@ -26,11 +26,11 @@ describe("WebSocketHandlers", () => {
     io = new Server(httpServer);
 
     const accountRepository = new AccountRepositoryDatabase();
-    const orderDAO = new OrderDAODatabase();
+    const orderRepository = new OrderRepositoryDatabase();
     signup = new Signup(accountRepository);
     deposit = new Deposit(accountRepository);
-    placeOrder = new PlaceOrder(accountRepository, orderDAO);
-    getDepth = new GetDepth(orderDAO);
+    placeOrder = new PlaceOrder(accountRepository, orderRepository);
+    getDepth = new GetDepth(orderRepository);
 
     const outputSignup = await signup.execute({
       name: "John Doe BTC",
@@ -40,20 +40,20 @@ describe("WebSocketHandlers", () => {
     });
     accountId = outputSignup.accountId;
     await deposit.execute({ accountId, assetId: "BTC", quantity: 10 });
-    await placeOrder.execute(
-      outputSignup.accountId,
-      "BTC/USD",
-      "sell",
-      84000,
-      2,
-    );
-    await placeOrder.execute(
-      outputSignup.accountId,
-      "BTC/USD",
-      "sell",
-      85000,
-      2,
-    );
+    await placeOrder.execute({
+      accountId: outputSignup.accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 84000,
+      quantity: 2,
+    });
+    await placeOrder.execute({
+      accountId: outputSignup.accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 85000,
+      quantity: 2,
+    });
 
     new WebSocketHandlers(io, getDepth);
 
@@ -153,7 +153,13 @@ describe("WebSocketHandlers", () => {
           expect(room?.has(client.id as string)).toBe(true);
           initialDepthReceived = true;
 
-          await placeOrder.execute(accountId, "BTC/USD", "sell", 80000, 1);
+          await placeOrder.execute({
+            accountId,
+            marketId: "BTC/USD",
+            side: "sell",
+            price: 80000,
+            quantity: 1,
+          });
         } else {
           expect(payload.depth.sells.length).toBe(3);
           done();
