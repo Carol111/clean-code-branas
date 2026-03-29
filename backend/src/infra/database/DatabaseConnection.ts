@@ -1,15 +1,15 @@
 import pgp from "pg-promise";
 
 export default interface DatabaseConnection {
-  query(statement: string, params: any): Promise<any>;
+  query(statement: string, params?: any): Promise<any>;
   close(): Promise<void>;
 }
 
 export class PgPromiseAdapter implements DatabaseConnection {
   connection: any;
 
-  constructor() {
-    this.connection = pgp()("postgres://postgres:123456@localhost:5432/app");
+  constructor(connectionString: string) {
+    this.connection = pgp()(connectionString);
   }
 
   async query(statement: string, params: any): Promise<any> {

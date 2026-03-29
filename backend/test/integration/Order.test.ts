@@ -19,7 +19,9 @@ describe("Order", () => {
   let connection: DatabaseConnection;
 
   beforeEach(async () => {
-    connection = new PgPromiseAdapter();
+    connection = new PgPromiseAdapter(process.env.DATABASE_TEST_URL!);
+    await connection.query("BEGIN");
+
     const accountRepository = new AccountRepositoryDatabase(connection);
     const orderRepository = new OrderRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
@@ -213,6 +215,7 @@ describe("Order", () => {
   });
 
   afterEach(async () => {
+    await connection.query("ROLLBACK");
     await connection.close();
   });
 });

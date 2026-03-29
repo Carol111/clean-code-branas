@@ -10,8 +10,10 @@ describe("Signup", () => {
   let getAccount: GetAccount;
   let connection: DatabaseConnection;
 
-  beforeEach(() => {
-    connection = new PgPromiseAdapter();
+  beforeEach(async () => {
+    connection = new PgPromiseAdapter(process.env.DATABASE_TEST_URL!);
+    await connection.query("BEGIN");
+
     const accountRepository = new AccountRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
     getAccount = new GetAccount(accountRepository);
@@ -50,6 +52,7 @@ describe("Signup", () => {
   });
 
   afterEach(async () => {
+    await connection.query("ROLLBACK");
     await connection.close();
   });
 });

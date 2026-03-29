@@ -15,8 +15,10 @@ describe("Depth", () => {
   let getDepth: GetDepth;
   let connection: DatabaseConnection;
 
-  beforeEach(() => {
-    connection = new PgPromiseAdapter();
+  beforeEach(async () => {
+    connection = new PgPromiseAdapter(process.env.DATABASE_TEST_URL!);
+    await connection.query("BEGIN");
+
     const accountRepository = new AccountRepositoryDatabase(connection);
     const orderRepository = new OrderRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
@@ -122,6 +124,7 @@ describe("Depth", () => {
   );
 
   afterEach(async () => {
+    await connection.query("ROLLBACK");
     await connection.close();
   });
 });

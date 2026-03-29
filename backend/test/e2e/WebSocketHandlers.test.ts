@@ -28,7 +28,8 @@ describe("WebSocketHandlers", () => {
   beforeEach(async () => {
     httpServer = createServer();
     io = new Server(httpServer);
-    connection = new PgPromiseAdapter();
+    connection = new PgPromiseAdapter(process.env.DATABASE_TEST_URL!);
+    await connection.query("BEGIN");
 
     const accountRepository = new AccountRepositoryDatabase(connection);
     const orderRepository = new OrderRepositoryDatabase(connection);
@@ -177,13 +178,16 @@ describe("WebSocketHandlers", () => {
     client.on("connect_error", done);
     client.on("error", done);
 
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (!initialDepthReceived)
         done(new Error("Did not receive initial depth after subscribe"));
     }, 1000);
+
+    clearTimeout(timeoutId);
   });
 
   afterEach(async () => {
+    await connection.query("ROLLBACK");
     await connection.close();
   });
 });

@@ -12,9 +12,20 @@ import { setupWebsocket } from "./infra/websocket/Websocket";
 import AccountController from "./infra/controller/AccountController";
 import OrderController from "./infra/controller/OrderController";
 import { PgPromiseAdapter } from "./infra/database/DatabaseConnection";
+import dotenv from "dotenv";
+import path from "path";
+
+dotenv.config({
+  path: path.resolve(__dirname, "../../.env"),
+});
+
+const connectionString =
+  process.env.NODE_ENV === "test"
+    ? process.env.DATABASE_TEST_URL!
+    : process.env.DATABASE_URL!;
 
 const httpServer = new ExpressAdapter();
-const connection = new PgPromiseAdapter();
+const connection = new PgPromiseAdapter(connectionString);
 const accountRepository = new AccountRepositoryDatabase(connection);
 const orderRepository = new OrderRepositoryDatabase(connection);
 const signup = new Signup(accountRepository);
