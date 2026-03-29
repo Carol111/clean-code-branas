@@ -5,6 +5,9 @@ import GetOrder from "../../src/GetOrder";
 import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import { OrderRepositoryDatabase } from "../../src/OrderRepository";
 import orderEventEmitter from "../../src/OrderEventEmitter";
+import DatabaseConnection, {
+  PgPromiseAdapter,
+} from "../../src/DatabaseConnection";
 
 describe("Order", () => {
   let signup: Signup;
@@ -13,9 +16,12 @@ describe("Order", () => {
   let getOrder: GetOrder;
   let accountId: string;
 
+  let connection: DatabaseConnection;
+
   beforeEach(async () => {
-    const accountRepository = new AccountRepositoryDatabase();
-    const orderRepository = new OrderRepositoryDatabase();
+    connection = new PgPromiseAdapter();
+    const accountRepository = new AccountRepositoryDatabase(connection);
+    const orderRepository = new OrderRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
     deposit = new Deposit(accountRepository);
     placeOrder = new PlaceOrder(accountRepository, orderRepository);
@@ -204,5 +210,9 @@ describe("Order", () => {
     } catch (error) {}
 
     expect(eventPayload).toBeNull();
+  });
+
+  afterEach(async () => {
+    await connection.close();
   });
 });

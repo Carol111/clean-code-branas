@@ -11,10 +11,12 @@ import { ExpressAdapter } from "./HttpServer";
 import { setupWebsocket } from "./Websocket";
 import AccountController from "./AccountController";
 import OrderController from "./OrderController";
+import { PgPromiseAdapter } from "./DatabaseConnection";
 
 const httpServer = new ExpressAdapter();
-const accountRepository = new AccountRepositoryDatabase();
-const orderRepository = new OrderRepositoryDatabase();
+const connection = new PgPromiseAdapter();
+const accountRepository = new AccountRepositoryDatabase(connection);
+const orderRepository = new OrderRepositoryDatabase(connection);
 const signup = new Signup(accountRepository);
 const getAccount = new GetAccount(accountRepository);
 const deposit = new Deposit(accountRepository);

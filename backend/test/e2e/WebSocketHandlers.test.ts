@@ -9,6 +9,9 @@ import PlaceOrder from "../../src/PlaceOrder";
 import GetDepth from "../../src/GetDepth";
 import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import { OrderRepositoryDatabase } from "../../src/OrderRepository";
+import DatabaseConnection, {
+  PgPromiseAdapter,
+} from "../../src/DatabaseConnection";
 
 describe("WebSocketHandlers", () => {
   let httpServer: HttpServer;
@@ -20,13 +23,15 @@ describe("WebSocketHandlers", () => {
   let placeOrder: PlaceOrder;
   let getDepth: GetDepth;
   let accountId: string;
+  let connection: DatabaseConnection;
 
   beforeEach(async () => {
     httpServer = createServer();
     io = new Server(httpServer);
+    connection = new PgPromiseAdapter();
 
-    const accountRepository = new AccountRepositoryDatabase();
-    const orderRepository = new OrderRepositoryDatabase();
+    const accountRepository = new AccountRepositoryDatabase(connection);
+    const orderRepository = new OrderRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
     deposit = new Deposit(accountRepository);
     placeOrder = new PlaceOrder(accountRepository, orderRepository);
@@ -176,5 +181,9 @@ describe("WebSocketHandlers", () => {
       if (!initialDepthReceived)
         done(new Error("Did not receive initial depth after subscribe"));
     }, 1000);
+  });
+
+  afterEach(async () => {
+    await connection.close();
   });
 });

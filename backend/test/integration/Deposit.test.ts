@@ -2,15 +2,20 @@ import Signup from "../../src/Signup";
 import Deposit from "../../src/Deposit";
 import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import GetAccount from "../../src/GetAccount";
+import DatabaseConnection, {
+  PgPromiseAdapter,
+} from "../../src/DatabaseConnection";
 
 describe("Deposit", () => {
   let signup: Signup;
   let getAccount: GetAccount;
   let deposit: Deposit;
   let accountId: string;
+  let connection: DatabaseConnection;
 
   beforeEach(async () => {
-    const accountRepository = new AccountRepositoryDatabase();
+    connection = new PgPromiseAdapter();
+    const accountRepository = new AccountRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
     getAccount = new GetAccount(accountRepository);
     deposit = new Deposit(accountRepository);
@@ -81,5 +86,9 @@ describe("Deposit", () => {
         quantity: -10,
       }),
     ).rejects.toThrow("Invalid quantity");
+  });
+
+  afterEach(async () => {
+    await connection.close();
   });
 });

@@ -3,6 +3,9 @@ import Deposit from "../../src/Deposit";
 import Withdraw from "../../src/Withdraw";
 import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import GetAccount from "../../src/GetAccount";
+import DatabaseConnection, {
+  PgPromiseAdapter,
+} from "../../src/DatabaseConnection";
 
 describe("Withdraw", () => {
   let signup: Signup;
@@ -10,9 +13,11 @@ describe("Withdraw", () => {
   let withdraw: Withdraw;
   let deposit: Deposit;
   let accountId: string;
+  let connection: DatabaseConnection;
 
   beforeEach(async () => {
-    const accountRepository = new AccountRepositoryDatabase();
+    connection = new PgPromiseAdapter();
+    const accountRepository = new AccountRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
     getAccount = new GetAccount(accountRepository);
     withdraw = new Withdraw(accountRepository);
@@ -91,4 +96,8 @@ describe("Withdraw", () => {
       ).rejects.toThrow(transaction.error);
     },
   );
+
+  afterEach(async () => {
+    await connection.close();
+  });
 });

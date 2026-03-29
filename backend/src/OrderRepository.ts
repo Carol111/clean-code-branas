@@ -1,5 +1,5 @@
-import pgp from "pg-promise";
 import Order from "./Order";
+import DatabaseConnection from "./DatabaseConnection";
 
 export default interface OrderRepository {
   selectOrders(
@@ -13,14 +13,14 @@ export default interface OrderRepository {
 }
 
 export class OrderRepositoryDatabase implements OrderRepository {
+  constructor(readonly connection: DatabaseConnection) {}
+
   async selectOrders(
     marketId: string,
     side: string,
     accountId?: string,
     status?: string,
   ) {
-    const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-
     const query =
       "select * from ccca.order where market_id = $1 and side = $2" +
       (accountId ? " and account_id = $3" : "") +
@@ -31,8 +31,7 @@ export class OrderRepositoryDatabase implements OrderRepository {
       .concat(accountId ? [accountId] : [])
       .concat(status ? [status] : []);
 
-    const ordersData = await connection.query(query, params);
-    await connection.$pool.end();
+    const ordersData = await this.connection.query(query, params);
 
     const orders: Order[] = [];
 
@@ -54,12 +53,10 @@ export class OrderRepositoryDatabase implements OrderRepository {
   }
 
   async selectOrder(orderId: string) {
-    const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-    const [orderData] = await connection.query(
+    const [orderData] = await this.connection.query(
       "select * from ccca.order where order_id = $1",
       [orderId],
     );
-    await connection.$pool.end();
 
     return new Order(
       orderData.order_id,
@@ -74,8 +71,7 @@ export class OrderRepositoryDatabase implements OrderRepository {
   }
 
   async insertOrder(order: Order) {
-    const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-    await connection.query(
+    await this.connection.query(
       "insert into ccca.order (order_id, market_id, account_id, side, quantity, price, status, timestamp) values ($1, $2, $3, $4, $5, $6, $7, $8)",
       [
         order.orderId,
@@ -88,6 +84,5 @@ export class OrderRepositoryDatabase implements OrderRepository {
         order.timestamp,
       ],
     );
-    await connection.$pool.end();
   }
 }

@@ -4,16 +4,21 @@ import PlaceOrder from "../../src/PlaceOrder";
 import GetDepth from "../../src/GetDepth";
 import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import { OrderRepositoryDatabase } from "../../src/OrderRepository";
+import DatabaseConnection, {
+  PgPromiseAdapter,
+} from "../../src/DatabaseConnection";
 
 describe("Depth", () => {
   let signup: Signup;
   let deposit: Deposit;
   let placeOrder: PlaceOrder;
   let getDepth: GetDepth;
+  let connection: DatabaseConnection;
 
   beforeEach(() => {
-    const accountRepository = new AccountRepositoryDatabase();
-    const orderRepository = new OrderRepositoryDatabase();
+    connection = new PgPromiseAdapter();
+    const accountRepository = new AccountRepositoryDatabase(connection);
+    const orderRepository = new OrderRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
     deposit = new Deposit(accountRepository);
     placeOrder = new PlaceOrder(accountRepository, orderRepository);
@@ -115,4 +120,8 @@ describe("Depth", () => {
       ).rejects.toThrow(depth.error);
     },
   );
+
+  afterEach(async () => {
+    await connection.close();
+  });
 });

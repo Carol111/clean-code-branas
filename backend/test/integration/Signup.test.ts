@@ -1,13 +1,18 @@
 import Signup from "../../src/Signup";
 import { AccountRepositoryDatabase } from "../../src/AccountRepository";
 import GetAccount from "../../src/GetAccount";
+import DatabaseConnection, {
+  PgPromiseAdapter,
+} from "../../src/DatabaseConnection";
 
 describe("Signup", () => {
   let signup: Signup;
   let getAccount: GetAccount;
+  let connection: DatabaseConnection;
 
   beforeEach(() => {
-    const accountRepository = new AccountRepositoryDatabase();
+    connection = new PgPromiseAdapter();
+    const accountRepository = new AccountRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
     getAccount = new GetAccount(accountRepository);
   });
@@ -42,5 +47,9 @@ describe("Signup", () => {
     await expect(() => signup.execute(inputSignup)).rejects.toThrow(
       "Invalid name",
     );
+  });
+
+  afterEach(async () => {
+    await connection.close();
   });
 });
