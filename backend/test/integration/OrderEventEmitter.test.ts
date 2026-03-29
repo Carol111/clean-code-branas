@@ -39,10 +39,6 @@ describe("OrderEventEmitter", () => {
     await deposit.execute({ accountId, assetId: "BTC", quantity: 10 });
   });
 
-  afterEach(() => {
-    orderEventEmitter.removeAllListeners();
-  });
-
   test("Should emit orderCreated event", async () => {
     orderEventEmitter.onOrderCreated((order) => {
       expect(order.accountId).toBe(accountId);
@@ -107,6 +103,7 @@ describe("OrderEventEmitter", () => {
   });
 
   afterEach(async () => {
+    orderEventEmitter.removeAllListeners();
     await connection.query("ROLLBACK");
     await connection.close();
   });

@@ -71,13 +71,6 @@ describe("WebSocketHandlers", () => {
     });
   });
 
-  afterEach(async () => {
-    client?.close();
-    await io.close();
-    await new Promise<void>((resolve) => httpServer.close(() => resolve()));
-    orderEventEmitter.removeAllListeners();
-  });
-
   test("Should handle client subscription with socket.io-client", (done) => {
     client = ioClient(`http://localhost:${port}`, {
       transports: ["websocket"],
@@ -187,6 +180,10 @@ describe("WebSocketHandlers", () => {
   });
 
   afterEach(async () => {
+    client?.close();
+    await io.close();
+    await new Promise<void>((resolve) => httpServer.close(() => resolve()));
+    orderEventEmitter.removeAllListeners();
     await connection.query("ROLLBACK");
     await connection.close();
   });

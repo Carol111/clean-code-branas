@@ -42,10 +42,6 @@ describe("Order", () => {
     await deposit.execute({ accountId, assetId: "USD", quantity: 100 });
   });
 
-  afterEach(() => {
-    orderEventEmitter.removeAllListeners();
-  });
-
   test("Should create a sell order", async () => {
     const outputPlaceOrder = await placeOrder.execute({
       accountId,
@@ -215,6 +211,7 @@ describe("Order", () => {
   });
 
   afterEach(async () => {
+    orderEventEmitter.removeAllListeners();
     await connection.query("ROLLBACK");
     await connection.close();
   });
