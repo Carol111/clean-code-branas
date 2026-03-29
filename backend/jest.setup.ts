@@ -1,8 +1,9 @@
-import pgp from "pg-promise";
+import dotenv from "dotenv";
+import path from "path";
 
-beforeAll(async () => {
-  const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-  await connection.query("DELETE FROM ccca.order");
-  await connection.query("DELETE FROM ccca.account");
-  await connection.$pool.end();
+dotenv.config({
+  path: path.resolve(__dirname, "../.env"),
+  quiet: true,
 });
+
+process.env.NODE_ENV = "test";

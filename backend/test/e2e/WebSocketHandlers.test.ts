@@ -1,14 +1,17 @@
 import { Server } from "socket.io";
 import { io as ioClient, Socket as ClientSocket } from "socket.io-client";
 import { createServer, Server as HttpServer } from "http";
-import { WebSocketHandlers } from "../../src/WebSocketHandlers";
-import orderEventEmitter from "../../src/OrderEventEmitter";
-import Signup from "../../src/Signup";
-import Deposit from "../../src/Deposit";
-import PlaceOrder from "../../src/PlaceOrder";
-import GetDepth from "../../src/GetDepth";
-import { AccountRepositoryDatabase } from "../../src/AccountRepository";
-import { OrderDAODatabase } from "../../src/OrderDAO";
+import { WebSocketHandlers } from "../../src/infra/websocket/WebSocketHandlers";
+import orderEventEmitter from "../../src/application/event/OrderEventEmitter";
+import Signup from "../../src/application/usecase/Signup";
+import Deposit from "../../src/application/usecase/Deposit";
+import PlaceOrder from "../../src/application/usecase/PlaceOrder";
+import GetDepth from "../../src/application/usecase/GetDepth";
+import { AccountRepositoryDatabase } from "../../src/infra/repository/AccountRepository";
+import { OrderRepositoryDatabase } from "../../src/infra/repository/OrderRepository";
+import DatabaseConnection, {
+  PgPromiseAdapter,
+} from "../../src/infra/database/DatabaseConnection";
 
 describe("WebSocketHandlers", () => {
   let httpServer: HttpServer;
@@ -20,17 +23,20 @@ describe("WebSocketHandlers", () => {
   let placeOrder: PlaceOrder;
   let getDepth: GetDepth;
   let accountId: string;
+  let connection: DatabaseConnection;
 
   beforeEach(async () => {
     httpServer = createServer();
     io = new Server(httpServer);
+    connection = new PgPromiseAdapter(process.env.DATABASE_TEST_URL!);
+    await connection.query("BEGIN");
 
-    const accountRepository = new AccountRepositoryDatabase();
-    const orderDAO = new OrderDAODatabase();
+    const accountRepository = new AccountRepositoryDatabase(connection);
+    const orderRepository = new OrderRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
     deposit = new Deposit(accountRepository);
-    placeOrder = new PlaceOrder(accountRepository, orderDAO);
-    getDepth = new GetDepth(orderDAO);
+    placeOrder = new PlaceOrder(accountRepository, orderRepository);
+    getDepth = new GetDepth(orderRepository);
 
     const outputSignup = await signup.execute({
       name: "John Doe BTC",
@@ -40,20 +46,20 @@ describe("WebSocketHandlers", () => {
     });
     accountId = outputSignup.accountId;
     await deposit.execute({ accountId, assetId: "BTC", quantity: 10 });
-    await placeOrder.execute(
-      outputSignup.accountId,
-      "BTC/USD",
-      "sell",
-      84000,
-      2,
-    );
-    await placeOrder.execute(
-      outputSignup.accountId,
-      "BTC/USD",
-      "sell",
-      85000,
-      2,
-    );
+    await placeOrder.execute({
+      accountId: outputSignup.accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 84000,
+      quantity: 2,
+    });
+    await placeOrder.execute({
+      accountId: outputSignup.accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 85000,
+      quantity: 2,
+    });
 
     new WebSocketHandlers(io, getDepth);
 
@@ -63,13 +69,6 @@ describe("WebSocketHandlers", () => {
         resolve();
       });
     });
-  });
-
-  afterEach(async () => {
-    client?.close();
-    await io.close();
-    await new Promise<void>((resolve) => httpServer.close(() => resolve()));
-    orderEventEmitter.removeAllListeners();
   });
 
   test("Should handle client subscription with socket.io-client", (done) => {
@@ -153,7 +152,13 @@ describe("WebSocketHandlers", () => {
           expect(room?.has(client.id as string)).toBe(true);
           initialDepthReceived = true;
 
-          await placeOrder.execute(accountId, "BTC/USD", "sell", 80000, 1);
+          await placeOrder.execute({
+            accountId,
+            marketId: "BTC/USD",
+            side: "sell",
+            price: 80000,
+            quantity: 1,
+          });
         } else {
           expect(payload.depth.sells.length).toBe(3);
           done();
@@ -166,9 +171,20 @@ describe("WebSocketHandlers", () => {
     client.on("connect_error", done);
     client.on("error", done);
 
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       if (!initialDepthReceived)
         done(new Error("Did not receive initial depth after subscribe"));
     }, 1000);
+
+    clearTimeout(timeoutId);
+  });
+
+  afterEach(async () => {
+    client?.close();
+    await io.close();
+    await new Promise<void>((resolve) => httpServer.close(() => resolve()));
+    orderEventEmitter.removeAllListeners();
+    await connection.query("ROLLBACK");
+    await connection.close();
   });
 });

@@ -1,6 +1,6 @@
-import pgp from "pg-promise";
-import Account from "./Account";
-import AccountAsset from "./AccountAsset";
+import Account from "../../domain/Account";
+import AccountAsset from "../../domain/AccountAsset";
+import DatabaseConnection from "../database/DatabaseConnection";
 
 export default interface AccountRepository {
   insertAccount(account: Account): Promise<void>;
@@ -15,9 +15,10 @@ export default interface AccountRepository {
 }
 
 export class AccountRepositoryDatabase implements AccountRepository {
+  constructor(readonly connection: DatabaseConnection) {}
+
   async insertAccount(account: Account): Promise<void> {
-    const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-    await connection.query(
+    await this.connection.query(
       "insert into ccca.account (account_id, name, email, document, password) values ($1, $2, $3, $4, $5)",
       [
         account.accountId,
@@ -27,16 +28,14 @@ export class AccountRepositoryDatabase implements AccountRepository {
         account.password,
       ],
     );
-    await connection.$pool.end();
   }
 
   async selectAccount(accountId: string): Promise<Account> {
-    const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-    const [accountData] = await connection.query(
+    const [accountData] = await this.connection.query(
       "select * from ccca.account where account_id = $1",
       [accountId],
     );
-    await connection.$pool.end();
+
     return new Account(
       accountData.account_id,
       accountData.name,
@@ -47,12 +46,10 @@ export class AccountRepositoryDatabase implements AccountRepository {
   }
 
   async selectAccountAssets(accountId: string): Promise<AccountAsset[]> {
-    const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-    const accountAssetsData = await connection.query(
+    const accountAssetsData = await this.connection.query(
       "select * from ccca.account_asset where account_id = $1",
       [accountId],
     );
-    await connection.$pool.end();
 
     const accountAssets: AccountAsset[] = [];
     for (const accountAssetData of accountAssetsData) {
@@ -71,12 +68,11 @@ export class AccountRepositoryDatabase implements AccountRepository {
     accountId: string,
     assetId: string,
   ): Promise<AccountAsset | null> {
-    const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-    const [accountAssetData] = await connection.query(
+    const [accountAssetData] = await this.connection.query(
       "select * from ccca.account_asset where account_id = $1 and asset_id = $2",
       [accountId, assetId],
     );
-    await connection.$pool.end();
+
     if (!accountAssetData) return null;
     return new AccountAsset(
       accountAssetData.account_id,
@@ -86,8 +82,7 @@ export class AccountRepositoryDatabase implements AccountRepository {
   }
 
   async updateAccountAsset(accountAsset: AccountAsset): Promise<void> {
-    const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-    await connection.query(
+    await this.connection.query(
       "update ccca.account_asset set quantity = $1 where account_id = $2 and asset_id = $3",
       [
         accountAsset.getQuantity(),
@@ -95,12 +90,10 @@ export class AccountRepositoryDatabase implements AccountRepository {
         accountAsset.assetId,
       ],
     );
-    await connection.$pool.end();
   }
 
   async insertAccountAsset(accountAsset: AccountAsset): Promise<void> {
-    const connection = pgp()("postgres://postgres:123456@localhost:5432/app");
-    await connection.query(
+    await this.connection.query(
       "insert into ccca.account_asset (account_id, asset_id, quantity) values ($1, $2, $3)",
       [
         accountAsset.accountId,
@@ -108,6 +101,5 @@ export class AccountRepositoryDatabase implements AccountRepository {
         accountAsset.getQuantity(),
       ],
     );
-    await connection.$pool.end();
   }
 }

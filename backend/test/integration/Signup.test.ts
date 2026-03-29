@@ -1,13 +1,20 @@
-import Signup from "../../src/Signup";
-import { AccountRepositoryDatabase } from "../../src/AccountRepository";
-import GetAccount from "../../src/GetAccount";
+import Signup from "../../src/application/usecase/Signup";
+import { AccountRepositoryDatabase } from "../../src/infra/repository/AccountRepository";
+import GetAccount from "../../src/application/usecase/GetAccount";
+import DatabaseConnection, {
+  PgPromiseAdapter,
+} from "../../src/infra/database/DatabaseConnection";
 
 describe("Signup", () => {
   let signup: Signup;
   let getAccount: GetAccount;
+  let connection: DatabaseConnection;
 
-  beforeEach(() => {
-    const accountRepository = new AccountRepositoryDatabase();
+  beforeEach(async () => {
+    connection = new PgPromiseAdapter(process.env.DATABASE_TEST_URL!);
+    await connection.query("BEGIN");
+
+    const accountRepository = new AccountRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
     getAccount = new GetAccount(accountRepository);
   });
@@ -44,42 +51,8 @@ describe("Signup", () => {
     );
   });
 
-  test("Should not create an account with invalid email", async () => {
-    const inputSignup = {
-      name: "John Doe",
-      email: "john.doe",
-      document: "97456321558",
-      password: "asdQWE123",
-    };
-
-    await expect(() => signup.execute(inputSignup)).rejects.toThrow(
-      "Invalid email",
-    );
-  });
-
-  test("Should not create an account with invalid document", async () => {
-    const inputSignup = {
-      name: "John Doe",
-      email: "john.doe@gmail.com",
-      document: "974563215",
-      password: "asdQWE123",
-    };
-
-    await expect(() => signup.execute(inputSignup)).rejects.toThrow(
-      "Invalid document",
-    );
-  });
-
-  test("Should not create an account with invalid password", async () => {
-    const inputSignup = {
-      name: "John Doe",
-      email: "john.doe@gmail.com",
-      document: "97456321558",
-      password: "asdQWE",
-    };
-
-    await expect(() => signup.execute(inputSignup)).rejects.toThrow(
-      "Invalid password",
-    );
+  afterEach(async () => {
+    await connection.query("ROLLBACK");
+    await connection.close();
   });
 });

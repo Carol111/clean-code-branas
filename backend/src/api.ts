@@ -1,134 +1,44 @@
-import express, { Request, Response } from "express";
-import cors from "cors";
-import { createServer } from "http";
-import { Server } from "socket.io";
-import Signup from "./Signup";
-import GetAccount from "./GetAccount";
-import Deposit from "./Deposit";
-import Withdraw from "./Withdraw";
-import PlaceOrder from "./PlaceOrder";
-import GetOrder from "./GetOrder";
-import GetDepth from "./GetDepth";
-import { AccountRepositoryDatabase } from "./AccountRepository";
-import { OrderDAODatabase } from "./OrderDAO";
-import { WebSocketHandlers } from "./WebSocketHandlers";
+import Signup from "./application/usecase/Signup";
+import GetAccount from "./application/usecase/GetAccount";
+import Deposit from "./application/usecase/Deposit";
+import Withdraw from "./application/usecase/Withdraw";
+import PlaceOrder from "./application/usecase/PlaceOrder";
+import GetOrder from "./application/usecase/GetOrder";
+import GetDepth from "./application/usecase/GetDepth";
+import { AccountRepositoryDatabase } from "./infra/repository/AccountRepository";
+import { OrderRepositoryDatabase } from "./infra/repository/OrderRepository";
+import { ExpressAdapter } from "./infra/http/HttpServer";
+import { setupWebsocket } from "./infra/websocket/Websocket";
+import AccountController from "./infra/controller/AccountController";
+import OrderController from "./infra/controller/OrderController";
+import { PgPromiseAdapter } from "./infra/database/DatabaseConnection";
+import dotenv from "dotenv";
+import path from "path";
 
-var corsOptions = {
-  origin: "http://localhost:5173",
-  optionsSuccessStatus: 200,
-};
+dotenv.config({
+  path: path.resolve(__dirname, "../../.env"),
+});
 
-const app = express();
-app.use(express.json());
-app.use(cors(corsOptions));
+const connectionString =
+  process.env.NODE_ENV === "test"
+    ? process.env.DATABASE_TEST_URL!
+    : process.env.DATABASE_URL!;
 
-const accountRepository = new AccountRepositoryDatabase();
-const orderDAO = new OrderDAODatabase();
+const httpServer = new ExpressAdapter();
+const connection = new PgPromiseAdapter(connectionString);
+const accountRepository = new AccountRepositoryDatabase(connection);
+const orderRepository = new OrderRepositoryDatabase(connection);
 const signup = new Signup(accountRepository);
 const getAccount = new GetAccount(accountRepository);
 const deposit = new Deposit(accountRepository);
 const withdraw = new Withdraw(accountRepository);
-const placeOrder = new PlaceOrder(accountRepository, orderDAO);
-const getOrder = new GetOrder(orderDAO);
-const getDepth = new GetDepth(orderDAO);
+const placeOrder = new PlaceOrder(accountRepository, orderRepository);
+const getOrder = new GetOrder(orderRepository);
+const getDepth = new GetDepth(orderRepository);
 
-app.post("/signup", async (req: Request, res: Response): Promise<any> => {
-  try {
-    const input = req.body;
-    const output = await signup.execute(input);
-    res.json(output);
-  } catch (e: any) {
-    res.status(422).json({
-      error: e.message,
-    });
-  }
-});
+AccountController.config(httpServer, signup, getAccount, deposit, withdraw);
+OrderController.config(httpServer, placeOrder, getOrder);
 
-app.get(
-  "/accounts/:accountId",
-  async (req: Request, res: Response): Promise<any> => {
-    try {
-      const accountId = req.params.accountId;
-      const output = await getAccount.execute(accountId);
-      res.json(output);
-    } catch (e: any) {
-      res.status(e.statusCode ?? 422).json({
-        error: e.message,
-      });
-    }
-  },
-);
+setupWebsocket(httpServer.server, getDepth);
 
-app.post("/deposit", async (req: Request, res: Response): Promise<any> => {
-  try {
-    const input = req.body;
-    const output = await deposit.execute(
-      input.accountId,
-      input.assetId,
-      input.quantity,
-    );
-    res.json(output);
-  } catch (e: any) {
-    res.status(422).json({
-      error: e.message,
-    });
-  }
-});
-
-app.post("/withdraw", async (req: Request, res: Response): Promise<any> => {
-  try {
-    const input = req.body;
-    const output = await withdraw.execute(
-      input.accountId,
-      input.assetId,
-      input.quantity,
-    );
-    res.json(output);
-  } catch (e: any) {
-    res.status(422).json({
-      error: e.message,
-    });
-  }
-});
-
-app.post("/place_order", async (req: Request, res: Response): Promise<any> => {
-  try {
-    const input = req.body;
-    const output = await placeOrder.execute(
-      input.accountId,
-      input.marketId,
-      input.side,
-      input.price,
-      input.quantity,
-    );
-    res.json(output);
-  } catch (e: any) {
-    res.status(422).json({
-      error: e.message,
-    });
-  }
-});
-
-app.get(
-  "/orders/:orderId",
-  async (req: Request, res: Response): Promise<any> => {
-    try {
-      const orderId = req.params.orderId;
-      const output = await getOrder.execute(orderId);
-      res.json(output);
-    } catch (e: any) {
-      res.status(e.statusCode ?? 422).json({
-        error: e.message,
-      });
-    }
-  },
-);
-
-const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: corsOptions,
-});
-
-new WebSocketHandlers(io, getDepth);
-
-httpServer.listen(3000, () => {});
+httpServer.listen(3000);

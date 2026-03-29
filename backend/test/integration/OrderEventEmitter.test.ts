@@ -1,10 +1,13 @@
-import orderEventEmitter from "../../src/OrderEventEmitter";
+import orderEventEmitter from "../../src/application/event/OrderEventEmitter";
 
-import Signup from "../../src/Signup";
-import Deposit from "../../src/Deposit";
-import PlaceOrder from "../../src/PlaceOrder";
-import { AccountRepositoryDatabase } from "../../src/AccountRepository";
-import { OrderDAODatabase } from "../../src/OrderDAO";
+import Signup from "../../src/application/usecase/Signup";
+import Deposit from "../../src/application/usecase/Deposit";
+import PlaceOrder from "../../src/application/usecase/PlaceOrder";
+import { AccountRepositoryDatabase } from "../../src/infra/repository/AccountRepository";
+import { OrderRepositoryDatabase } from "../../src/infra/repository/OrderRepository";
+import DatabaseConnection, {
+  PgPromiseAdapter,
+} from "../../src/infra/database/DatabaseConnection";
 
 describe("OrderEventEmitter", () => {
   let signup: Signup;
@@ -12,12 +15,17 @@ describe("OrderEventEmitter", () => {
   let placeOrder: PlaceOrder;
   let accountId: string;
 
+  let connection: DatabaseConnection;
+
   beforeEach(async () => {
-    const accountRepository = new AccountRepositoryDatabase();
-    const orderDAO = new OrderDAODatabase();
+    connection = new PgPromiseAdapter(process.env.DATABASE_TEST_URL!);
+    await connection.query("BEGIN");
+
+    const accountRepository = new AccountRepositoryDatabase(connection);
+    const orderRepository = new OrderRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
     deposit = new Deposit(accountRepository);
-    placeOrder = new PlaceOrder(accountRepository, orderDAO);
+    placeOrder = new PlaceOrder(accountRepository, orderRepository);
 
     const outputSignup = await signup.execute({
       name: "John Doe",
@@ -31,10 +39,6 @@ describe("OrderEventEmitter", () => {
     await deposit.execute({ accountId, assetId: "BTC", quantity: 10 });
   });
 
-  afterEach(() => {
-    orderEventEmitter.removeAllListeners();
-  });
-
   test("Should emit orderCreated event", async () => {
     orderEventEmitter.onOrderCreated((order) => {
       expect(order.accountId).toBe(accountId);
@@ -44,7 +48,13 @@ describe("OrderEventEmitter", () => {
       expect(order.price).toBe(84000);
     });
 
-    await placeOrder.execute(accountId, "BTC/USD", "sell", 84000, 1);
+    await placeOrder.execute({
+      accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 84000,
+      quantity: 1,
+    });
   });
 
   test("Should be singleton - same instance", () => {
@@ -63,7 +73,13 @@ describe("OrderEventEmitter", () => {
     orderEventEmitter.onOrderCreated(listener1);
     orderEventEmitter.onOrderCreated(listener2);
 
-    await placeOrder.execute(accountId, "BTC/USD", "sell", 84000, 1);
+    await placeOrder.execute({
+      accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 84000,
+      quantity: 1,
+    });
 
     expect(count).toBe(2);
   });
@@ -75,8 +91,20 @@ describe("OrderEventEmitter", () => {
     orderEventEmitter.onOrderCreated(listener);
     orderEventEmitter.removeOrderCreatedListener(listener);
 
-    await placeOrder.execute(accountId, "BTC/USD", "sell", 84000, 1);
+    await placeOrder.execute({
+      accountId,
+      marketId: "BTC/USD",
+      side: "sell",
+      price: 84000,
+      quantity: 1,
+    });
 
     expect(callCount).toBe(0);
+  });
+
+  afterEach(async () => {
+    orderEventEmitter.removeAllListeners();
+    await connection.query("ROLLBACK");
+    await connection.close();
   });
 });

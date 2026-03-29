@@ -1,6 +1,8 @@
 import { Server, Socket } from "socket.io";
-import GetDepth from "./GetDepth";
-import orderEventEmitter, { OrderEvent } from "./OrderEventEmitter";
+import GetDepth from "../../application/usecase/GetDepth";
+import orderEventEmitter, {
+  OrderEvent,
+} from "../../application/event/OrderEventEmitter";
 
 export class WebSocketHandlers {
   private io: Server;

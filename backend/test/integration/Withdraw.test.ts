@@ -1,8 +1,11 @@
-import Signup from "../../src/Signup";
-import Deposit from "../../src/Deposit";
-import Withdraw from "../../src/Withdraw";
-import { AccountRepositoryDatabase } from "../../src/AccountRepository";
-import GetAccount from "../../src/GetAccount";
+import Signup from "../../src/application/usecase/Signup";
+import Deposit from "../../src/application/usecase/Deposit";
+import Withdraw from "../../src/application/usecase/Withdraw";
+import { AccountRepositoryDatabase } from "../../src/infra/repository/AccountRepository";
+import GetAccount from "../../src/application/usecase/GetAccount";
+import DatabaseConnection, {
+  PgPromiseAdapter,
+} from "../../src/infra/database/DatabaseConnection";
 
 describe("Withdraw", () => {
   let signup: Signup;
@@ -10,9 +13,13 @@ describe("Withdraw", () => {
   let withdraw: Withdraw;
   let deposit: Deposit;
   let accountId: string;
+  let connection: DatabaseConnection;
 
   beforeEach(async () => {
-    const accountRepository = new AccountRepositoryDatabase();
+    connection = new PgPromiseAdapter(process.env.DATABASE_TEST_URL!);
+    await connection.query("BEGIN");
+
+    const accountRepository = new AccountRepositoryDatabase(connection);
     signup = new Signup(accountRepository);
     getAccount = new GetAccount(accountRepository);
     withdraw = new Withdraw(accountRepository);
@@ -91,4 +98,9 @@ describe("Withdraw", () => {
       ).rejects.toThrow(transaction.error);
     },
   );
+
+  afterEach(async () => {
+    await connection.query("ROLLBACK");
+    await connection.close();
+  });
 });

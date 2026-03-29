@@ -1,4 +1,4 @@
-import { isValidUUID } from "../../src/validateUUID";
+import { isValidUUID } from "../../src/domain/validateUUID";
 
 describe("validateUUID", () => {
   test("Should validate the UUID", async () => {
