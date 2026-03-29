@@ -108,7 +108,12 @@ describe("Depth", () => {
 
     const outputGetDepthBTC = await getDepth.execute("BTC/USD", 3);
     expect(outputGetDepthBTC.sells.length).toBe(3);
+    expect(outputGetDepthBTC.sells[0].price).toBe(84000);
+    expect(outputGetDepthBTC.sells[1].price).toBe(87000);
+    expect(outputGetDepthBTC.sells[2].price).toBe(88000);
     expect(outputGetDepthBTC.buys.length).toBe(2);
+    expect(outputGetDepthBTC.buys[0].price).toBe(82000);
+    expect(outputGetDepthBTC.buys[1].price).toBe(84000);
   });
 
   test.each([

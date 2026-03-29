@@ -44,9 +44,9 @@ export default class PlaceOrder {
 
     const ordersData = await this.orderRepository.selectOrders(
       input.marketId,
+      "open",
       input.side,
       input.accountId,
-      "open",
     );
 
     let totalAmout = 0;

@@ -4,9 +4,9 @@ import DatabaseConnection from "../database/DatabaseConnection";
 export default interface OrderRepository {
   selectOrders(
     marketId: string,
-    side: string,
-    accountId?: string,
     status?: string,
+    side?: string,
+    accountId?: string,
   ): Promise<Order[]>;
   selectOrder(orderId: string): Promise<Order>;
   insertOrder(order: Order): Promise<void>;
@@ -17,19 +17,21 @@ export class OrderRepositoryDatabase implements OrderRepository {
 
   async selectOrders(
     marketId: string,
-    side: string,
-    accountId?: string,
     status?: string,
+    side?: string,
+    accountId?: string,
   ) {
+    const ids = [status, side, accountId];
     const query =
-      "select * from ccca.order where market_id = $1 and side = $2" +
-      (accountId ? " and account_id = $3" : "") +
-      (status ? " and status = $" : "") +
-      (accountId && status ? "4" : status ? "3" : "");
+      "select * from ccca.order where market_id = $1" +
+      (status ? " and status = $" + (ids.indexOf(status) + 2) : "") +
+      (side ? " and side = $" + (ids.indexOf(side) + 2) : "") +
+      (accountId ? " and account_id = $" + (ids.indexOf(accountId) + 2) : "");
 
-    const params = [marketId, side]
-      .concat(accountId ? [accountId] : [])
-      .concat(status ? [status] : []);
+    const params = [marketId]
+      .concat(status ? [status] : [])
+      .concat(side ? [side] : [])
+      .concat(accountId ? [accountId] : []);
 
     const ordersData = await this.connection.query(query, params);
 
@@ -49,6 +51,7 @@ export class OrderRepositoryDatabase implements OrderRepository {
         ),
       );
     }
+
     return orders;
   }
 

@@ -1,4 +1,4 @@
-import Order from "../../domain/Order";
+import { groupOrders } from "../../domain/groupOrders";
 import OrderRepository from "../../infra/repository/OrderRepository";
 
 export default class GetDepth {
@@ -14,71 +14,31 @@ export default class GetDepth {
       throw new Error("Invalid market");
     if (precision < 0) throw new Error("Invalid precision");
 
-    const buyOrders = await this.orderRepository.selectOrders(
-      marketId,
-      "buy",
-      undefined,
-      "open",
-    );
+    const orders = await this.orderRepository.selectOrders(marketId, "open");
 
-    const buyOrdersGrouped: { quantity: number; price: number }[] = [];
+    const index = groupOrders(orders, precision);
 
-    for (const buyOrder of buyOrders) {
-      const roundedPrice = this.roundToNearest(buyOrder.price, precision);
-      const samePrice = buyOrdersGrouped.find(
-        (value) => value.price === roundedPrice,
-      );
-      if (!samePrice) {
-        buyOrdersGrouped.push({
-          quantity: buyOrder.quantity,
-          price: roundedPrice,
-        });
-      } else {
-        samePrice.quantity = buyOrder.quantity + samePrice.quantity;
-      }
-    }
-
-    const buyOrdersSorted = buyOrdersGrouped.sort(
-      (
-        a: { quantity: number; price: number },
-        b: { quantity: number; price: number },
-      ) => b.price - a.price,
-    );
-
-    const sellOrders = await this.orderRepository.selectOrders(
-      marketId,
-      "sell",
-      undefined,
-      "open",
-    );
-
-    const sellOrdersGrouped: { quantity: number; price: number }[] = [];
-
-    for (const sellOrder of sellOrders) {
-      const roundedPrice = this.roundToNearest(sellOrder.price, precision);
-      const samePrice = sellOrdersGrouped.find(
-        (value) => value.price === roundedPrice,
-      );
-      if (!samePrice) {
-        sellOrdersGrouped.push({
-          quantity: sellOrder.quantity,
-          price: roundedPrice,
-        });
-      } else {
-        samePrice.quantity = sellOrder.quantity + samePrice.quantity;
-      }
-    }
-
-    const sellOrdersSorted = sellOrdersGrouped.sort(
-      (
-        a: { quantity: number; price: number },
-        b: { quantity: number; price: number },
-      ) => b.price - a.price,
-    );
-
-    return {
-      buys: buyOrdersSorted,
-      sells: sellOrdersSorted,
+    const output: Output = {
+      buys: [],
+      sells: [],
     };
+    for (const price in index.buy) {
+      output.buys.push({
+        quantity: index.buy[price],
+        price: parseFloat(price),
+      });
+    }
+    for (const price in index.sell) {
+      output.sells.push({
+        quantity: index.sell[price],
+        price: parseFloat(price),
+      });
+    }
+    return output;
   }
 }
+
+type Output = {
+  buys: { quantity: number; price: number }[];
+  sells: { quantity: number; price: number }[];
+};
