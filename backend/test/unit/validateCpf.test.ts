@@ -1,4 +1,4 @@
-import { validateCpf } from "../../src/validateCpf";
+import { validateCpf } from "../../src/domain/validateCpf";
 
 describe("validateCpf", () => {
   test.each([

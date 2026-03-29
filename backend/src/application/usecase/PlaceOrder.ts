@@ -1,9 +1,9 @@
 import crypto from "crypto";
-import AccountRepository from "./AccountRepository";
-import OrderRepository from "./OrderRepository";
-import { isValidUUID } from "./validateUUID";
-import orderEventEmitter from "./OrderEventEmitter";
-import Order from "./Order";
+import AccountRepository from "../../infra/repository/AccountRepository";
+import OrderRepository from "../../infra/repository/OrderRepository";
+import { isValidUUID } from "../../domain/validateUUID";
+import orderEventEmitter from "../event/OrderEventEmitter";
+import Order from "../../domain/Order";
 
 export default class PlaceOrder {
   constructor(
@@ -11,7 +11,7 @@ export default class PlaceOrder {
     readonly orderRepository: OrderRepository,
   ) {}
 
-  async execute(input: Input): Promise<any> {
+  async execute(input: Input): Promise<Output> {
     if (!isValidUUID(input.accountId)) throw new Error("Invalid account");
 
     const accountData = await this.accountRepository.selectAccount(
@@ -94,4 +94,8 @@ type Input = {
   side: string;
   quantity: number;
   price: number;
+};
+
+type Output = {
+  orderId: string;
 };

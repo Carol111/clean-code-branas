@@ -1,6 +1,6 @@
-import HttpServer from "./HttpServer";
-import GetOrder from "./GetOrder";
-import PlaceOrder from "./PlaceOrder";
+import HttpServer from "../http/HttpServer";
+import GetOrder from "../../application/usecase/GetOrder";
+import PlaceOrder from "../../application/usecase/PlaceOrder";
 
 export default class OrderController {
   static config(

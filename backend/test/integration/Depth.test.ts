@@ -1,12 +1,12 @@
-import Signup from "../../src/Signup";
-import Deposit from "../../src/Deposit";
-import PlaceOrder from "../../src/PlaceOrder";
-import GetDepth from "../../src/GetDepth";
-import { AccountRepositoryDatabase } from "../../src/AccountRepository";
-import { OrderRepositoryDatabase } from "../../src/OrderRepository";
+import Signup from "../../src/application/usecase/Signup";
+import Deposit from "../../src/application/usecase/Deposit";
+import PlaceOrder from "../../src/application/usecase/PlaceOrder";
+import GetDepth from "../../src/application/usecase/GetDepth";
+import { AccountRepositoryDatabase } from "../../src/infra/repository/AccountRepository";
+import { OrderRepositoryDatabase } from "../../src/infra/repository/OrderRepository";
 import DatabaseConnection, {
   PgPromiseAdapter,
-} from "../../src/DatabaseConnection";
+} from "../../src/infra/database/DatabaseConnection";
 
 describe("Depth", () => {
   let signup: Signup;

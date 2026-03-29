@@ -1,5 +1,5 @@
-import Order from "./Order";
-import DatabaseConnection from "./DatabaseConnection";
+import Order from "../../domain/Order";
+import DatabaseConnection from "../database/DatabaseConnection";
 
 export default interface OrderRepository {
   selectOrders(

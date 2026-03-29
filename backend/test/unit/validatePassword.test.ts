@@ -1,4 +1,4 @@
-import { validatePassword } from "../../src/validatePassword";
+import { validatePassword } from "../../src/domain/validatePassword";
 
 describe("validatePassword", () => {
   test("Should validate the password", async () => {

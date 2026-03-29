@@ -1,17 +1,17 @@
 import { Server } from "socket.io";
 import { io as ioClient, Socket as ClientSocket } from "socket.io-client";
 import { createServer, Server as HttpServer } from "http";
-import { WebSocketHandlers } from "../../src/WebSocketHandlers";
-import orderEventEmitter from "../../src/OrderEventEmitter";
-import Signup from "../../src/Signup";
-import Deposit from "../../src/Deposit";
-import PlaceOrder from "../../src/PlaceOrder";
-import GetDepth from "../../src/GetDepth";
-import { AccountRepositoryDatabase } from "../../src/AccountRepository";
-import { OrderRepositoryDatabase } from "../../src/OrderRepository";
+import { WebSocketHandlers } from "../../src/infra/websocket/WebSocketHandlers";
+import orderEventEmitter from "../../src/application/event/OrderEventEmitter";
+import Signup from "../../src/application/usecase/Signup";
+import Deposit from "../../src/application/usecase/Deposit";
+import PlaceOrder from "../../src/application/usecase/PlaceOrder";
+import GetDepth from "../../src/application/usecase/GetDepth";
+import { AccountRepositoryDatabase } from "../../src/infra/repository/AccountRepository";
+import { OrderRepositoryDatabase } from "../../src/infra/repository/OrderRepository";
 import DatabaseConnection, {
   PgPromiseAdapter,
-} from "../../src/DatabaseConnection";
+} from "../../src/infra/database/DatabaseConnection";
 
 describe("WebSocketHandlers", () => {
   let httpServer: HttpServer;

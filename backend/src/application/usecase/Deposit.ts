@@ -1,6 +1,6 @@
-import AccountAsset from "./AccountAsset";
-import AccountRepository from "./AccountRepository";
-import { isValidUUID } from "./validateUUID";
+import AccountAsset from "../../domain/AccountAsset";
+import AccountRepository from "../../infra/repository/AccountRepository";
+import { isValidUUID } from "../../domain/validateUUID";
 
 export default class Deposit {
   constructor(readonly accountRepository: AccountRepository) {}

@@ -1,5 +1,5 @@
-import OrderRepository from "./OrderRepository";
-import { isValidUUID } from "./validateUUID";
+import OrderRepository from "../../infra/repository/OrderRepository";
+import { isValidUUID } from "../../domain/validateUUID";
 
 export default class GetOrder {
   constructor(readonly orderRepository: OrderRepository) {}

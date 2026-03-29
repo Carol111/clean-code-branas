@@ -1,6 +1,6 @@
-import Account from "./Account";
-import AccountAsset from "./AccountAsset";
-import DatabaseConnection from "./DatabaseConnection";
+import Account from "../../domain/Account";
+import AccountAsset from "../../domain/AccountAsset";
+import DatabaseConnection from "../database/DatabaseConnection";
 
 export default interface AccountRepository {
   insertAccount(account: Account): Promise<void>;

@@ -1,5 +1,5 @@
-import Order from "./Order";
-import OrderRepository from "./OrderRepository";
+import Order from "../../domain/Order";
+import OrderRepository from "../../infra/repository/OrderRepository";
 
 export default class GetDepth {
   constructor(readonly orderRepository: OrderRepository) {}

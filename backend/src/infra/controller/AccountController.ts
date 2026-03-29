@@ -1,8 +1,8 @@
-import HttpServer from "./HttpServer";
-import Deposit from "./Deposit";
-import GetAccount from "./GetAccount";
-import Signup from "./Signup";
-import Withdraw from "./Withdraw";
+import HttpServer from "../http/HttpServer";
+import Deposit from "../../application/usecase/Deposit";
+import GetAccount from "../../application/usecase/GetAccount";
+import Signup from "../../application/usecase/Signup";
+import Withdraw from "../../application/usecase/Withdraw";
 
 export default class AccountController {
   static config(

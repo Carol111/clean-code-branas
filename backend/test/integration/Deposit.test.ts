@@ -1,10 +1,10 @@
-import Signup from "../../src/Signup";
-import Deposit from "../../src/Deposit";
-import { AccountRepositoryDatabase } from "../../src/AccountRepository";
-import GetAccount from "../../src/GetAccount";
+import Signup from "../../src/application/usecase/Signup";
+import Deposit from "../../src/application/usecase/Deposit";
+import { AccountRepositoryDatabase } from "../../src/infra/repository/AccountRepository";
+import GetAccount from "../../src/application/usecase/GetAccount";
 import DatabaseConnection, {
   PgPromiseAdapter,
-} from "../../src/DatabaseConnection";
+} from "../../src/infra/database/DatabaseConnection";
 
 describe("Deposit", () => {
   let signup: Signup;

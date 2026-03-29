@@ -1,5 +1,5 @@
-import AccountRepository from "./AccountRepository";
-import { isValidUUID } from "./validateUUID";
+import AccountRepository from "../../infra/repository/AccountRepository";
+import { isValidUUID } from "../../domain/validateUUID";
 
 export default class Withdraw {
   constructor(readonly accountRepository: AccountRepository) {}

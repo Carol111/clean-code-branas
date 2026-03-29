@@ -1,6 +1,6 @@
 import { Server } from "socket.io";
 import { WebSocketHandlers } from "./WebSocketHandlers";
-import GetDepth from "./GetDepth";
+import GetDepth from "../../application/usecase/GetDepth";
 
 export function setupWebsocket(server: any, getDepth: GetDepth) {
   const io = new Server(server, {
